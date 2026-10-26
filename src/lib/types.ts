@@ -1,0 +1,66 @@
+export type SortField = 'updatedAt' | 'createdAt' | 'title'
+export type SortDirection = 'asc' | 'desc'
+
+export interface Prompt {
+  id: string
+  title: string
+  content: string
+  categoryId: string
+  notes?: string
+  tags?: string[]
+  isFavorite?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  color?: string
+  isDefault?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Settings {
+  id: 'app'
+  schemaVersion: 1
+  sortBy: SortField
+  sortDirection: SortDirection
+  lastBackupAt?: string
+  backupReminderDismissed?: boolean
+  categoriesInitialized?: boolean
+}
+
+/** Shape written by exportBackup() and accepted by importBackup(). */
+export interface BackupFile {
+  app: 'PromptNook'
+  formatVersion: 1
+  exportedAt: string
+  prompts: Prompt[]
+  categories: Category[]
+  settings: {
+    sortBy: SortField
+    sortDirection: SortDirection
+    lastBackupAt?: string
+    backupReminderDismissed?: boolean
+  }
+}
+
+export type PromptInput = {
+  title: string
+  content: string
+  categoryId: string
+  notes?: string
+  tags?: string[]
+}
+
+export type ImportMode = 'merge' | 'replace'
+
+export type CategoryDeleteOptions =
+  | { mode: 'delete' }
+  | { mode: 'move'; targetId: string }
+
+export type ImportResult =
+  | { ok: true; prompts: number; categories: number }
+  | { ok: false; error: string }

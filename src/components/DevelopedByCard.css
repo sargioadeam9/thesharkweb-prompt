@@ -1,0 +1,320 @@
+/* DevelopedByCard.css
+   All colour values resolve to the brand tokens declared in src/index.css.
+   No hover effects: the card only animates on entrance and on its own border. */
+
+.credit {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 420px;
+  margin-inline: auto;
+  padding: 1px;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--color-line) 78%, var(--color-surface));
+  box-shadow:
+    0 1px 1px color-mix(in srgb, var(--color-ink) 5%, transparent),
+    0 24px 48px -34px color-mix(in srgb, var(--color-brand-deep) 45%, transparent);
+}
+
+/* Animated gradient ring: 1px, masked so only the border paints. */
+.credit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--color-brand) 82%, transparent) 0%,
+    var(--color-brand-soft) 22%,
+    var(--color-surface) 44%,
+    var(--color-brand-tint) 60%,
+    var(--color-brand) 80%,
+    color-mix(in srgb, var(--color-brand-deep) 78%, transparent) 100%
+  );
+  background-size: 240% 240%;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: credit-border 14s ease-in-out infinite;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Soft brand glow that breathes behind the card. */
+.credit::after {
+  content: '';
+  position: absolute;
+  inset: -26px -18px -34px;
+  z-index: -1;
+  border-radius: 40px;
+  background: radial-gradient(
+    58% 62% at 50% 0%,
+    color-mix(in srgb, var(--color-brand) 26%, transparent),
+    color-mix(in srgb, var(--color-brand-soft) 11%, transparent) 56%,
+    transparent 78%
+  );
+  filter: blur(26px);
+  opacity: 0.5;
+  animation: credit-breathe 11s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.credit__surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 23px;
+  background: linear-gradient(
+    180deg,
+    var(--color-surface) 0%,
+    var(--color-surface) 64%,
+    color-mix(in srgb, var(--color-brand-wash) 72%, var(--color-surface)) 100%
+  );
+}
+
+.credit__inner {
+  position: relative;
+  z-index: 1;
+  padding: 26px 24px 18px;
+}
+
+.credit__head {
+  display: block;
+}
+
+/* Logo is used exactly as supplied. The negative margins collapse the empty
+   padding baked into the PNG so the mark sits tight to the card edge. */
+.credit__logo {
+  display: block;
+  width: 210px;
+  height: auto;
+  margin: -26px 0 -23px -28px;
+  clip-path: inset(31.15% 12.45% 27.49% 13.31%);
+  user-select: none;
+}
+
+.credit__label {
+  margin: 16px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+}
+
+.credit__name {
+  margin: 6px 0 0;
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: var(--color-ink);
+}
+
+.credit__role {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--color-ink-muted);
+}
+
+.credit__sep {
+  padding-inline: 7px;
+  color: var(--color-ink-faint);
+}
+
+.credit__links {
+  display: grid;
+  gap: 2px;
+  margin: 20px 0 0;
+  padding: 12px 0 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+}
+
+.credit__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-inline: -8px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  color: var(--color-ink);
+  text-decoration: none;
+  transition:
+    background-color 250ms ease,
+    color 250ms ease;
+}
+
+.credit__link:hover {
+  background-color: color-mix(in srgb, var(--color-brand) 7%, transparent);
+}
+
+.credit__link:active {
+  background-color: color-mix(in srgb, var(--color-brand) 12%, transparent);
+}
+
+.credit__link:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.credit__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--color-brand);
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--color-brand-tint) 92%, var(--color-surface)),
+    color-mix(in srgb, var(--color-brand-wash) 82%, var(--color-surface))
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-brand) 10%, transparent);
+  transition:
+    color 250ms ease,
+    background 250ms ease;
+}
+
+.credit__link:hover .credit__icon {
+  color: var(--color-brand-deep);
+  background: linear-gradient(
+    150deg,
+    var(--color-brand-tint),
+    color-mix(in srgb, var(--color-brand-soft) 28%, var(--color-surface))
+  );
+}
+
+.credit__text {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.credit__arrow {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--color-ink-faint);
+  opacity: 0;
+  transform: translate3d(-4px, 4px, 0);
+  transition:
+    opacity 250ms ease,
+    transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 250ms ease;
+}
+
+.credit__link:hover .credit__arrow,
+.credit__link:focus-visible .credit__arrow {
+  opacity: 1;
+  transform: none;
+  color: var(--color-brand);
+}
+
+/* Entrance: fade and rise, staggered once the card scrolls into view. */
+.credit[data-shown='true'] .credit__inner {
+  animation: credit-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.credit[data-shown='true'] .credit__head > * {
+  animation: credit-fade 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.credit[data-shown='true'] .credit__head > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.credit[data-shown='true'] .credit__head > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.credit[data-shown='true'] .credit__head > *:nth-child(4) {
+  animation-delay: 170ms;
+}
+
+.credit[data-shown='true'] .credit__links {
+  animation: credit-fade 520ms cubic-bezier(0.22, 1, 0.36, 1) 230ms both;
+}
+
+@keyframes credit-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes credit-fade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes credit-border {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes credit-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.68;
+  }
+}
+
+@media (max-width: 400px) {
+  .credit__inner {
+    padding: 22px 18px 14px;
+  }
+
+  .credit__logo {
+    width: 190px;
+    margin: -24px 0 -21px -25px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credit,
+  .credit::before,
+  .credit::after,
+  .credit__link,
+  .credit__icon,
+  .credit__arrow,
+  .credit__inner,
+  .credit__head > *,
+  .credit__links {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .credit__arrow {
+    opacity: 1;
+    transform: none;
+  }
+}

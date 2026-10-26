@@ -7,6 +7,7 @@ import type { LucideIcon } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import AboutPanel from './components/AboutPanel'
 import BackupPanel from './components/BackupPanel'
+import BackupReminder from './components/BackupReminder'
 import CategoryBar from './components/CategoryBar'
 import CategoryManager from './components/CategoryManager'
 import Header from './components/Header'
@@ -30,6 +31,13 @@ function focusSearch() {
     document.querySelectorAll<HTMLInputElement>('input[aria-label="Search prompts"]'),
   )
   inputs.find((input) => input.offsetParent !== null)?.focus()
+}
+
+function localDayKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function EmptyState({
@@ -68,6 +76,7 @@ function App() {
   const [modal, setModal] = useState<ModalState | null>(null)
   const [showCategories, setShowCategories] = useState(false)
   const [showBackup, setShowBackup] = useState(false)
+  const [reminderHidden, setReminderHidden] = useState(false)
 
   useEffect(() => {
     ensureSeeded().catch((error: unknown) => {
@@ -105,7 +114,11 @@ function App() {
       repo.listCategories(),
       repo.getSettings(),
     ])
-    return { prompts, categories, settings }
+    const lastBackupDay = settings.lastBackupAt
+      ? localDayKey(new Date(settings.lastBackupAt))
+      : null
+
+    return { prompts, categories, settings, lastBackupDay }
   }, [])
 
   const prompts = useMemo(() => data?.prompts ?? [], [data])
@@ -174,6 +187,25 @@ function App() {
 
   const defaultCategoryId =
     activeView && activeView !== 'favorites' ? activeView : (categories[0]?.id ?? '')
+
+  // Daily nudge: once a day, only when there is something to lose and the
+  // library has not already been exported today. The day key is captured once
+  // per mount, which is exactly "the day this session started".
+  const [today] = useState(() => localDayKey(new Date()))
+  const lastBackupDay = data?.lastBackupDay ?? null
+  const showBackupReminder =
+    !reminderHidden &&
+    prompts.length > 0 &&
+    settings !== undefined &&
+    settings.backupPromptDate !== today &&
+    lastBackupDay !== today
+
+  function dismissBackupReminder() {
+    setReminderHidden(true)
+    repo.updateSettings({ backupPromptDate: today }).catch((error: unknown) => {
+      console.error('Could not remember the reminder dismissal', error)
+    })
+  }
 
   function handleSortChange(value: string) {
     const [sortBy, sortDirection] = value.split('-') as [SortField, SortDirection]
@@ -396,6 +428,20 @@ function App() {
           categoryCount={categories.length}
           lastBackupAt={settings?.lastBackupAt}
           onClose={() => setShowBackup(false)}
+        />
+      ) : null}
+
+      {showBackupReminder ? (
+        <BackupReminder
+          lastBackupAt={settings?.lastBackupAt}
+          onBackup={() => {
+            setReminderHidden(true)
+            setShowBackup(true)
+            repo.updateSettings({ backupPromptDate: today }).catch((error: unknown) => {
+              console.error('Could not remember the reminder dismissal', error)
+            })
+          }}
+          onDismiss={dismissBackupReminder}
         />
       ) : null}
 

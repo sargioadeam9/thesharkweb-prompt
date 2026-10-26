@@ -1,4 +1,5 @@
 import { db, DEFAULT_CATEGORY_SEEDS, ensureSeeded, resetSeeding } from './db'
+import { clearDraft } from './draft'
 import type {
   BackupFile,
   Category,
@@ -430,6 +431,8 @@ export async function resetAll(): Promise<void> {
     await db.settings.clear()
   })
 
+  // A half-written prompt in sessionStorage is part of the old library too.
+  clearDraft()
   resetSeeding()
   await ensureSeeded()
 }

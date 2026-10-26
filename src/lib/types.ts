@@ -29,6 +29,8 @@ export interface Settings {
   sortDirection: SortDirection
   lastBackupAt?: string
   backupReminderDismissed?: boolean
+  /** Local date key (YYYY-MM-DD) of the last day the reminder was shown. */
+  backupPromptDate?: string
   categoriesInitialized?: boolean
 }
 

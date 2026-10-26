@@ -73,6 +73,22 @@
   }
 }
 
+/* Daily backup reminder card */
+.backup-reminder {
+  animation: reminder-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes reminder-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Category switches cross-fade the grid instead of the whole page. */
 .prompt-grid {
   view-transition-name: prompt-grid;
@@ -104,6 +120,10 @@
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  .backup-reminder {
     animation: none !important;
   }
 }

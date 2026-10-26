@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { KeyboardEvent } from 'react'
-import { AlertTriangle, Check, Download, ShieldCheck, Upload, X } from 'lucide-react'
+import type { FormEvent, KeyboardEvent } from 'react'
+import { AlertTriangle, Check, Download, Mail, ShieldCheck, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import * as repo from '../lib/repo'
+import { emailBackup } from '../lib/email-backup'
 import type { BackupFile } from '../lib/types'
 
 type Props = {
@@ -33,6 +34,10 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
   }))
   const [answer, setAnswer] = useState('')
   const [word, setWord] = useState('')
+  const [email, setEmail] = useState('')
+  const [newsletter, setNewsletter] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -102,6 +107,34 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
             ? error.message
             : 'Could not read that file.',
       )
+    }
+  }
+
+  async function handleEmailBackup(event: FormEvent) {
+    event.preventDefault()
+    if (sendingEmail) return
+
+    setEmailError(null)
+    setSendingEmail(true)
+
+    try {
+      // Stamp lastBackupAt only after the send succeeds.
+      const backup = await repo.exportBackup({ stamp: false })
+      const result = await emailBackup(email.trim(), backup, newsletter)
+
+      if (!result.ok) {
+        setEmailError(result.error ?? 'Could not send the email.')
+        return
+      }
+
+      await repo.updateSettings({ lastBackupAt: backup.exportedAt })
+      toast.success(`Backup sent to ${email.trim()}`)
+      setEmail('')
+      setNewsletter(false)
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Could not send the email.')
+    } finally {
+      setSendingEmail(false)
     }
   }
 
@@ -200,6 +233,60 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
               <Download className="size-4" strokeWidth={1.75} aria-hidden="true" />
               {busy === 'export' ? 'Preparing…' : 'Download JSON backup'}
             </button>
+
+            <form
+              onSubmit={handleEmailBackup}
+              className="mt-4 rounded-xl border border-line bg-canvas/60 p-3"
+            >
+              <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
+                <Mail className="size-3.5 text-ink-muted" strokeWidth={1.75} aria-hidden="true" />
+                Or email the file to yourself
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-ink-muted">
+                We send the file and keep your address so we can send it. Your prompts are never
+                stored on our side.
+              </p>
+
+              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value)
+                    setEmailError(null)
+                  }}
+                  placeholder="you@example.com"
+                  aria-label="Email address for the backup"
+                  autoComplete="email"
+                  disabled={promptCount === 0}
+                  className="h-9 w-full rounded-lg border border-line bg-surface px-3 text-[13px] text-ink transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 focus:outline-none disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={sendingEmail || !email.trim() || promptCount === 0}
+                  className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-ink px-3.5 text-[12px] font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40"
+                >
+                  {sendingEmail ? 'Sending…' : 'Send'}
+                </button>
+              </div>
+
+              <label className="mt-2 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-ink-muted">
+                <input
+                  type="checkbox"
+                  checked={newsletter}
+                  onChange={(event) => setNewsletter(event.target.checked)}
+                  className="mt-0.5 accent-[var(--color-brand)]"
+                />
+                Also send me one prompt pack a week. Unsubscribe any time.
+              </label>
+
+              {emailError ? (
+                <p role="alert" className="mt-2 text-[11px] text-danger">
+                  {emailError}
+                </p>
+              ) : null}
+            </form>
           </section>
 
           <section className="border-t border-line pt-5">

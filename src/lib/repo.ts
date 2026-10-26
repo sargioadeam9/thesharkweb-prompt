@@ -242,7 +242,7 @@ export async function updateSettings(patch: Partial<Settings>): Promise<Settings
 
 /* ------------------------------ backup / import ----------------------------- */
 
-export async function exportBackup(): Promise<BackupFile> {
+export async function exportBackup(options: { stamp?: boolean } = {}): Promise<BackupFile> {
   const [prompts, categories, settings] = await Promise.all([
     db.prompts.toArray(),
     db.categories.toArray(),
@@ -250,7 +250,8 @@ export async function exportBackup(): Promise<BackupFile> {
   ])
 
   const exportedAt = nowIso()
-  await db.settings.put({ ...settings, lastBackupAt: exportedAt })
+  const stamp = options.stamp ?? true
+  if (stamp) await db.settings.put({ ...settings, lastBackupAt: exportedAt })
 
   return {
     app: 'TheSharkWebPrompt',
@@ -261,7 +262,7 @@ export async function exportBackup(): Promise<BackupFile> {
     settings: {
       sortBy: settings.sortBy,
       sortDirection: settings.sortDirection,
-      lastBackupAt: exportedAt,
+      lastBackupAt: stamp ? exportedAt : settings.lastBackupAt,
       backupReminderDismissed: settings.backupReminderDismissed,
     },
   }

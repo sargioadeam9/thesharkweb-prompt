@@ -25,7 +25,7 @@ const FAQS: Faq[] = [
   {
     question: 'How do I back up my prompts?',
     answer:
-      'Open Backup and data, then press Download JSON backup. Keep the file somewhere safe like Google Drive or Dropbox.',
+      'Open Backup and data, then press Download JSON backup. Keep the file somewhere safe like Google Drive or Dropbox. You can also have the file emailed to you from the same screen.',
   },
   {
     question: 'How do I restore a backup?',
@@ -60,7 +60,7 @@ const FAQS: Faq[] = [
   {
     question: 'Do you see or collect my prompts?',
     answer:
-      'No. There is no server, no account and no tracking. Your prompts never leave this browser.',
+      'No. Your prompts stay in this browser and there is no tracking. If you ask us to email you a backup, that file is passed to our email provider, sent to you, and then dropped. We keep your email address if you give it, and we never keep your prompts.',
   },
   {
     question: 'Is it free?',

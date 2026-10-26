@@ -50,8 +50,8 @@ export default function AboutPanel() {
           </div>
 
           <p className="px-1 text-[11px] leading-relaxed text-ink-muted">
-            Local-first by design. Prompts never leave this browser, and the JSON backup is the only
-            copy that travels.
+            Local-first by design. Prompts stay in this browser. The JSON backup is the only copy
+            that travels, and only when you export it or ask us to email it.
           </p>
         </div>
       </div>

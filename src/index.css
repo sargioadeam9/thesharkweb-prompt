@@ -73,6 +73,58 @@
   }
 }
 
+/* FAQ accordion and its call to action */
+.faq-item > summary {
+  list-style: none;
+}
+
+.faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-chevron {
+  transition: transform 200ms ease;
+}
+
+.faq-item[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+
+.faq-cta {
+  position: relative;
+  isolation: isolate;
+}
+
+.faq-cta__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid var(--color-brand);
+  animation: faq-ring 2.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  pointer-events: none;
+}
+
+.faq-cta__arrow {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-cta:hover .faq-cta__arrow,
+.faq-cta:focus-visible .faq-cta__arrow {
+  transform: translate3d(2px, -2px, 0);
+}
+
+@keyframes faq-ring {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.14);
+  }
+}
+
 /* Daily backup reminder card */
 .backup-reminder {
   animation: reminder-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -125,5 +177,15 @@
 
   .backup-reminder {
     animation: none !important;
+  }
+
+  .faq-cta__ring {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  .faq-cta__arrow,
+  .faq-chevron {
+    transition: none !important;
   }
 }

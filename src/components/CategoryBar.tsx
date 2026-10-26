@@ -1,4 +1,4 @@
-import { Database, Info, Settings2 } from 'lucide-react'
+import { Database, HelpCircle, Info, Settings2 } from 'lucide-react'
 import type { Category } from '../lib/types'
 import type { View } from './Sidebar'
 
@@ -76,6 +76,19 @@ export default function CategoryBar({
 
       <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
 
+      <button
+        type="button"
+        onClick={() => onSelect('faq')}
+        aria-label="FAQ"
+        aria-current={view === 'faq' ? 'page' : undefined}
+        className={
+          view === 'faq'
+            ? 'grid size-8 shrink-0 place-items-center rounded-full border border-ink bg-ink text-surface transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
+            : actionClass
+        }
+      >
+        <HelpCircle className="size-4" strokeWidth={1.75} aria-hidden="true" />
+      </button>
       <button
         type="button"
         onClick={() => onSelect('about')}

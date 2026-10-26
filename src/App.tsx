@@ -10,6 +10,7 @@ import BackupPanel from './components/BackupPanel'
 import BackupReminder from './components/BackupReminder'
 import CategoryBar from './components/CategoryBar'
 import CategoryManager from './components/CategoryManager'
+import FaqPanel from './components/FaqPanel'
 import Header from './components/Header'
 import PromptCard from './components/PromptCard'
 import PromptModal from './components/PromptModal'
@@ -130,6 +131,7 @@ function App() {
     view &&
     view !== 'favorites' &&
     view !== 'about' &&
+    view !== 'faq' &&
     !categories.some((category) => category.id === view)
       ? null
       : view
@@ -181,7 +183,9 @@ function App() {
         ? 'Favorites'
         : activeView === 'about'
           ? 'About'
-          : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
+          : activeView === 'faq'
+            ? 'FAQ'
+            : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
 
   const sortValue = `${settings?.sortBy ?? 'updatedAt'}-${settings?.sortDirection ?? 'desc'}`
 
@@ -316,7 +320,7 @@ function App() {
             sortValue={sortValue}
             onSortChange={handleSortChange}
             onNew={() => setModal({ mode: 'create' })}
-            showControls={activeView !== 'about'}
+            showControls={activeView !== 'about' && activeView !== 'faq'}
           />
           <CategoryBar
             categories={categories}
@@ -332,6 +336,8 @@ function App() {
           <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
             {activeView === 'about' ? (
               <AboutPanel />
+            ) : activeView === 'faq' ? (
+              <FaqPanel />
             ) : (
               <>
                 <p aria-live="polite" className="sr-only">

@@ -1,9 +1,9 @@
-import { Database, Info, LayoutGrid, Settings2, Star } from 'lucide-react'
+import { Database, HelpCircle, Info, LayoutGrid, Settings2, Star } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Category } from '../lib/types'
 import BrandMark from './BrandMark'
 
-export type View = null | 'favorites' | 'about' | string
+export type View = null | 'favorites' | 'about' | 'faq' | string
 
 type SidebarProps = {
   categories: Category[]
@@ -135,12 +135,18 @@ export default function Sidebar({
           })}
         </ul>
 
-        <div className="mt-6 border-t border-line pt-3">
+        <div className="mt-6 space-y-1 border-t border-line pt-3">
           <NavButton
             active={view === 'about'}
             icon={Info}
             label="About"
             onClick={() => onSelect('about')}
+          />
+          <NavButton
+            active={view === 'faq'}
+            icon={HelpCircle}
+            label="FAQ"
+            onClick={() => onSelect('faq')}
           />
         </div>
       </nav>

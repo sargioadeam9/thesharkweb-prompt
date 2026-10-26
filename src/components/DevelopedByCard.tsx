@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUpRight, Globe, Mail, MessageCircle } from 'lucide-react'
+import { ArrowUpRight, Building2, Globe, Mail, MessageCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import './DevelopedByCard.css'
 
@@ -27,6 +27,12 @@ const LINKS: CreditLink[] = [
     label: 'www.zonaedhossain.com',
     href: 'https://www.zonaedhossain.com',
     icon: Globe,
+    external: true,
+  },
+  {
+    label: 'www.thesharkweb.com',
+    href: 'https://www.thesharkweb.com',
+    icon: Building2,
     external: true,
   },
 ]

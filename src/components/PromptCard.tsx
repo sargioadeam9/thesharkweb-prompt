@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Check, Copy, EllipsisVertical, Pencil, Star, StickyNote, Trash2 } from 'lucide-react'
 import { copyText } from '../lib/clipboard'
-import { tintForPrompt } from '../lib/tints'
 import type { Prompt } from '../lib/types'
 import { wordCount } from '../lib/utils'
 
@@ -80,7 +79,6 @@ export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onTo
 
   const tags = prompt.tags?.slice(0, 3) ?? []
   const extraTags = (prompt.tags?.length ?? 0) - tags.length
-  const tint = tintForPrompt(prompt.id)
 
   const copyLabel = status === 'copied' ? 'Copied' : status === 'failed' ? 'Try again' : 'Copy'
   const copyAria =
@@ -91,10 +89,7 @@ export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onTo
         : `Copy "${prompt.title}"`
 
   return (
-    <article
-      className="group relative flex flex-col rounded-2xl border border-line p-5 shadow-xs transition-all duration-200 hover:border-ink-faint/40 hover:shadow-[0_8px_24px_-16px_rgba(11,12,17,0.25)]"
-      style={{ backgroundImage: `linear-gradient(158deg, ${tint.from} 0%, ${tint.to} 100%)` }}
-    >
+    <article className="group relative flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-xs transition-all duration-200 hover:border-ink-faint/40 hover:shadow-[0_8px_24px_-16px_rgba(11,12,17,0.25)]">
       <button
         type="button"
         onClick={() => onOpen(prompt)}
@@ -192,7 +187,7 @@ export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onTo
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md bg-ink/5 px-1.5 py-0.5 text-[11px] font-medium text-ink-muted"
+                className="rounded-md bg-canvas px-1.5 py-0.5 text-[11px] font-medium text-ink-muted"
               >
                 {tag}
               </span>
@@ -222,7 +217,7 @@ export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onTo
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
               status === 'copied'
                 ? 'border-brand/30 bg-brand-tint/70 text-brand-deep'
-                : 'border-ink/10 text-ink-muted hover:border-brand/30 hover:bg-brand-tint/50 hover:text-brand-deep',
+                : 'border-line text-ink-muted hover:border-brand/30 hover:bg-brand-tint/50 hover:text-brand-deep',
             ].join(' ')}
           >
             {status === 'copied' ? (

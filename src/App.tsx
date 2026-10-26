@@ -142,11 +142,20 @@ function App() {
     else if (activeView) list = list.filter((prompt) => prompt.categoryId === activeView)
 
     if (needle) {
-      list = list.filter((prompt) =>
-        [prompt.title, prompt.content, prompt.notes ?? '', (prompt.tags ?? []).join(' ')].some(
-          (field) => field.toLowerCase().includes(needle),
-        ),
-      )
+      // Every word must appear somewhere, in any order.
+      const terms = needle.split(/\s+/)
+      list = list.filter((prompt) => {
+        const haystack = [
+          prompt.title,
+          prompt.content,
+          prompt.notes ?? '',
+          (prompt.tags ?? []).join(' '),
+        ]
+          .join(' ')
+          .toLowerCase()
+
+        return terms.every((term) => haystack.includes(term))
+      })
     }
 
     return sortPrompts(list, settings?.sortBy ?? 'updatedAt', settings?.sortDirection ?? 'desc')
@@ -305,7 +314,7 @@ function App() {
                   />
                 ))}
               </div>
-            ) : prompts.length === 0 ? (
+            ) : prompts.length === 0 && !query.trim() ? (
               <EmptyState
                 icon={Library}
                 title="Your prompt library starts here."

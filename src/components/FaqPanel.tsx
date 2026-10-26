@@ -70,7 +70,7 @@ const FAQS: Faq[] = [
 
 export default function FaqPanel() {
   return (
-    <div className="mx-auto w-full max-w-[720px] px-5 py-10 lg:px-8 lg:py-12">
+    <div className="mx-auto w-full max-w-[920px] px-5 py-8 lg:px-8 lg:py-10">
       <div className="mb-6">
         <h2 className="text-[20px] font-semibold tracking-[-0.025em]">Questions people ask</h2>
         <p className="mt-1.5 text-[13px] text-ink-muted">
@@ -78,12 +78,12 @@ export default function FaqPanel() {
         </p>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid items-start gap-2 sm:grid-cols-2">
         {FAQS.map((item, index) => (
           <details
             key={item.question}
             open={index === 0}
-            className="faq-item rounded-xl border border-line bg-surface px-4 py-3"
+            className="faq-item rounded-xl border border-line bg-surface px-4 py-2"
           >
             <summary className="flex cursor-pointer items-center justify-between gap-3 text-[13px] font-medium text-ink">
               <span>{item.question}</span>
@@ -93,12 +93,12 @@ export default function FaqPanel() {
                 aria-hidden="true"
               />
             </summary>
-            <p className="mt-2 pr-6 text-[13px] leading-relaxed text-ink-muted">{item.answer}</p>
+            <p className="mt-2 pr-5 text-[13px] leading-relaxed text-ink-muted">{item.answer}</p>
           </details>
         ))}
       </div>
 
-      <div className="mt-9 flex justify-center">
+      <div className="mt-7 flex justify-center">
         <a
           href="https://www.thesharkweb.com"
           target="_blank"

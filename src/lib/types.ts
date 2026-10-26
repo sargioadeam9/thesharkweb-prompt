@@ -34,7 +34,7 @@ export interface Settings {
 
 /** Shape written by exportBackup() and accepted by importBackup(). */
 export interface BackupFile {
-  app: 'PromptNook'
+  app: 'TheSharkWebPrompt'
   formatVersion: 1
   exportedAt: string
   prompts: Prompt[]

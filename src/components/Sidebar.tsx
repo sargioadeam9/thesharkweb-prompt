@@ -78,7 +78,9 @@ export default function Sidebar({
     <aside className="hidden w-[232px] shrink-0 flex-col border-r border-line bg-surface lg:flex">
       <div className="flex h-[72px] shrink-0 items-center gap-2.5 border-b border-line px-5">
         <BrandMark />
-        <span className="text-[15px] font-semibold tracking-[-0.02em]">PromptNook</span>
+        <span className="truncate text-[14px] font-semibold tracking-[-0.02em]">
+          TheSharkWebPrompt
+        </span>
       </div>
 
       <nav aria-label="Library" className="flex-1 overflow-y-auto px-3 py-4">

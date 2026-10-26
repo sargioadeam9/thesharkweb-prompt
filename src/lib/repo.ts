@@ -252,7 +252,7 @@ export async function exportBackup(): Promise<BackupFile> {
   await db.settings.put({ ...settings, lastBackupAt: exportedAt })
 
   return {
-    app: 'PromptNook',
+    app: 'TheSharkWebPrompt',
     formatVersion: 1,
     exportedAt,
     prompts,
@@ -280,8 +280,11 @@ function requireIsoDate(value: unknown, field: string): string {
 /** Throws a readable message on the first problem found. */
 export function parseBackup(raw: unknown): BackupFile {
   if (!isRecord(raw)) throw new Error('Invalid backup: root must be an object')
-  if (raw.app !== undefined && raw.app !== 'PromptNook') {
-    throw new Error('Invalid backup: not a PromptNook file')
+
+  // 'PromptNook' is the pre-rename marker, still accepted so old files import.
+  const knownApp = raw.app === 'TheSharkWebPrompt' || raw.app === 'PromptNook'
+  if (raw.app !== undefined && !knownApp) {
+    throw new Error('Invalid backup: not a TheSharkWebPrompt file')
   }
   if (raw.formatVersion !== 1) throw new Error('Invalid backup: unsupported format version')
   requireIsoDate(raw.exportedAt, 'exportedAt')
@@ -331,7 +334,7 @@ export function parseBackup(raw: unknown): BackupFile {
     : 'desc'
 
   return {
-    app: 'PromptNook',
+    app: 'TheSharkWebPrompt',
     formatVersion: 1,
     exportedAt: raw.exportedAt as string,
     prompts,

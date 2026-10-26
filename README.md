@@ -1,4 +1,4 @@
-# PromptNook
+# TheSharkWebPrompt
 
 A local-first prompt library. Save, organise, search and copy AI prompts without an account, a
 server or a network connection.

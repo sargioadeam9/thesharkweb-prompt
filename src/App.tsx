@@ -13,7 +13,7 @@ import Header from './components/Header'
 import PromptCard from './components/PromptCard'
 import PromptModal from './components/PromptModal'
 import Sidebar, { type View } from './components/Sidebar'
-import { APP_LICENSE, APP_VERSION } from './lib/app-info'
+import { APP_VERSION } from './lib/app-info'
 import { ensureSeeded } from './lib/db'
 import * as repo from './lib/repo'
 import type { Prompt, PromptInput, SortDirection, SortField } from './lib/types'
@@ -357,7 +357,7 @@ function App() {
 
       <footer className="border-t border-line px-6 py-5">
         <p className="text-center text-[11px] text-ink-muted">
-          PromptNook {APP_VERSION} · {APP_LICENSE} License
+          TheSharkWebPrompt v{APP_VERSION}
         </p>
       </footer>
 

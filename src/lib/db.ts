@@ -2,6 +2,8 @@ import Dexie, { type Table } from 'dexie'
 import type { Category, Prompt, Settings } from './types'
 import { nowIso } from './utils'
 
+/* Kept as-is on purpose: renaming the database would orphan every prompt that
+   already exists in a user's browser. Only the visible branding changed. */
 export const DB_NAME = 'PromptNookDB'
 export const DB_VERSION = 1
 

@@ -1,4 +1,4 @@
-export const APP_NAME = 'PromptNook'
+export const APP_NAME = 'TheSharkWebPrompt'
 
 // __APP_VERSION__ comes from vite.config `define`. The guard keeps the app
 // alive if it is ever served without that config.

@@ -12,6 +12,9 @@ type Props = {
   onClose: () => void
 }
 
+const resetFieldClass =
+  'h-9 w-full rounded-lg border border-line bg-surface px-3 text-[13px] text-ink transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 focus:outline-none'
+
 function formatDate(value?: string): string {
   if (!value) return 'never'
   const date = new Date(value)
@@ -23,10 +26,19 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
   const [preview, setPreview] = useState<BackupFile | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
   const [mode, setMode] = useState<'merge' | 'replace'>('merge')
-  const [resetConfirmed, setResetConfirmed] = useState(false)
   const [busy, setBusy] = useState<'export' | 'import' | 'reset' | null>(null)
+  const [challenge] = useState(() => ({
+    a: 2 + Math.floor(Math.random() * 8),
+    b: 1 + Math.floor(Math.random() * 8),
+  }))
+  const [answer, setAnswer] = useState('')
+  const [word, setWord] = useState('')
   const dialogRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const mathOk = answer.trim() !== '' && Number(answer.trim()) === challenge.a + challenge.b
+  const wordOk = word.trim().toLowerCase() === 'reset'
+  const resetReady = mathOk && wordOk
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -291,19 +303,51 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
               Deletes every prompt and custom category in this browser, then restores the four
               default categories. Export first if you might want any of it back.
             </p>
-            <label className="mt-3 flex cursor-pointer items-start gap-2 text-[12px] text-ink">
-              <input
-                type="checkbox"
-                checked={resetConfirmed}
-                onChange={(event) => setResetConfirmed(event.target.checked)}
-                className="mt-0.5 accent-[var(--color-danger)]"
-              />
-              I understand this cannot be undone.
-            </label>
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 block text-[12px] font-medium text-ink">
+                  What is {challenge.a} + {challenge.b}?
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={answer}
+                  onChange={(event) => setAnswer(event.target.value)}
+                  placeholder="Your answer"
+                  autoComplete="off"
+                  aria-invalid={answer !== '' && !mathOk}
+                  className={`${resetFieldClass} ${answer !== '' && !mathOk ? 'border-danger' : ''}`}
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[12px] font-medium text-ink">
+                  Type <span className="font-semibold">reset</span> to confirm
+                </span>
+                <input
+                  type="text"
+                  value={word}
+                  onChange={(event) => setWord(event.target.value)}
+                  placeholder="reset"
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-invalid={word !== '' && !wordOk}
+                  className={`${resetFieldClass} ${word !== '' && !wordOk ? 'border-danger' : ''}`}
+                />
+              </label>
+            </div>
+
+            <p className="mt-2 text-[11px] text-ink-muted">
+              {resetReady
+                ? 'Both checks passed. The button is unlocked.'
+                : 'Both checks must be correct before the button unlocks.'}
+            </p>
+
             <button
               type="button"
               onClick={handleReset}
-              disabled={!resetConfirmed || busy !== null}
+              disabled={!resetReady || busy !== null}
               className="mt-3 inline-flex h-9 items-center rounded-lg bg-danger px-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40"
             >
               {busy === 'reset' ? 'Resetting…' : 'Reset library'}

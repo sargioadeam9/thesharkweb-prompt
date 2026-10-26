@@ -53,6 +53,26 @@
   }
 }
 
+/* Brand mark: the supplied logo cropped to its blue symbol, no new artwork. */
+.brand-logo {
+  background-color: var(--color-surface);
+  background-image: url('/logo/the-shark-web-logo.png');
+  background-repeat: no-repeat;
+  background-size: 608.3% auto;
+  background-position: 15.93% 53.1%;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-line) 85%, transparent);
+}
+
+/* iOS Safari zooms the page when a focused field is under 16px. */
+@media (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Category switches cross-fade the grid instead of the whole page. */
 .prompt-grid {
   view-transition-name: prompt-grid;

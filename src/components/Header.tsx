@@ -132,9 +132,9 @@ export default function Header({
 
       <div className="px-5 pt-3 pb-3 lg:hidden">
         <div className="flex items-center gap-2.5">
-          <BrandMark size={20} />
-          <span className="min-w-0 truncate text-[14px] font-semibold tracking-[-0.02em]">
-            PromptNook
+          <BrandMark size={22} />
+          <span className="hidden min-w-0 truncate text-[14px] font-semibold tracking-[-0.02em] sm:block">
+            TheSharkWebPrompt
           </span>
           <button
             type="button"
@@ -145,7 +145,7 @@ export default function Header({
             <Plus className="size-4" strokeWidth={2.25} aria-hidden="true" />
           </button>
           {showControls ? (
-            <SortSelect value={sortValue} onChange={onSortChange} className="w-[142px] shrink-0" />
+            <SortSelect value={sortValue} onChange={onSortChange} className="w-[176px] shrink-0" />
           ) : null}
         </div>
         {showControls ? (

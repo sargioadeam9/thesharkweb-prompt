@@ -26,7 +26,7 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
   const [preview, setPreview] = useState<BackupFile | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
   const [mode, setMode] = useState<'merge' | 'replace'>('merge')
-  const [busy, setBusy] = useState<'export' | 'import' | 'reset' | null>(null)
+  const [busy, setBusy] = useState<'export' | 'import' | 'reset' | 'hard' | null>(null)
   const [challenge] = useState(() => ({
     a: 2 + Math.floor(Math.random() * 8),
     b: 1 + Math.floor(Math.random() * 8),
@@ -139,6 +139,17 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not reset the library')
     } finally {
+      setBusy(null)
+    }
+  }
+
+  async function handleHardReset() {
+    setBusy('hard')
+    try {
+      await repo.hardReset()
+      window.location.reload()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not wipe the local database')
       setBusy(null)
     }
   }
@@ -340,18 +351,33 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
 
             <p className="mt-2 text-[11px] text-ink-muted">
               {resetReady
-                ? 'Both checks passed. The button is unlocked.'
-                : 'Both checks must be correct before the button unlocks.'}
+                ? 'Both checks passed. The buttons are unlocked.'
+                : 'Both checks must be correct before the buttons unlock.'}
             </p>
 
-            <button
-              type="button"
-              onClick={handleReset}
-              disabled={!resetReady || busy !== null}
-              className="mt-3 inline-flex h-9 items-center rounded-lg bg-danger px-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40"
-            >
-              {busy === 'reset' ? 'Resetting…' : 'Reset library'}
-            </button>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={!resetReady || busy !== null}
+                className="inline-flex h-9 items-center rounded-lg bg-danger px-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40"
+              >
+                {busy === 'reset' ? 'Resetting…' : 'Reset library'}
+              </button>
+              <button
+                type="button"
+                onClick={handleHardReset}
+                disabled={!resetReady || busy !== null}
+                className="inline-flex h-9 items-center rounded-lg border border-danger/40 px-3.5 text-[13px] font-semibold text-danger transition-colors hover:bg-danger/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40"
+              >
+                {busy === 'hard' ? 'Wiping…' : 'Hard reset'}
+              </button>
+            </div>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+              Reset clears every prompt and keeps the app ready to use. Hard reset also deletes the
+              database itself and reloads, so the browser forgets this app completely.
+            </p>
           </section>
         </div>
       </div>

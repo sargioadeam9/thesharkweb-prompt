@@ -424,6 +424,24 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
   return { ok: true, prompts: backup.prompts.length, categories: backup.categories.length }
 }
 
+/** Wipes everything this origin stores, database included. The caller reloads after. */
+export async function hardReset(): Promise<void> {
+  clearDraft()
+  db.close()
+  await db.delete()
+
+  try {
+    window.localStorage.clear()
+  } catch {
+    // Storage can be blocked, the database is already gone.
+  }
+
+  if (typeof caches !== 'undefined') {
+    const keys = await caches.keys()
+    await Promise.all(keys.map((key) => caches.delete(key)))
+  }
+}
+
 export async function resetAll(): Promise<void> {
   await db.transaction('rw', db.prompts, db.categories, db.settings, async () => {
     await db.prompts.clear()

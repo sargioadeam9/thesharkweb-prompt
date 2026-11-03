@@ -29,3 +29,6 @@ dist-ssr
 
 # supabase CLI local state (project ref, pooler url)
 supabase/.temp/
+
+# generated serverless bundles (npm run build:api)
+api/**/*.js

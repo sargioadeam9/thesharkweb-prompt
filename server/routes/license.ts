@@ -1,7 +1,7 @@
-import type { Req, Res, LicenseRow } from '../server/guards'
-import { licenseState, limited, requireUser } from '../server/guards'
-import { getServiceClient } from '../server/supabase'
-import { sendLicenseExpiryWarningEmail } from '../server/email'
+import type { Req, Res, LicenseRow } from '../guards'
+import { licenseState, limited, requireUser } from '../guards'
+import { getServiceClient } from '../supabase'
+import { sendLicenseExpiryWarningEmail } from '../email'
 
 export default async function handler(req: Req, res: Res) {
   if (req.method !== 'GET') {

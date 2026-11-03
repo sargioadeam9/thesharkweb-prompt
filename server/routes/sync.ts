@@ -1,7 +1,7 @@
-import type { Req, Res, LicenseRow } from '../server/guards'
-import { licenseState, limited, requireUser } from '../server/guards'
-import { getServiceClient } from '../server/supabase'
-import { parseBackup } from '../src/lib/repo'
+import type { Req, Res, LicenseRow } from '../guards'
+import { licenseState, limited, requireUser } from '../guards'
+import { getServiceClient } from '../supabase'
+import { parseBackup } from '../../src/lib/repo'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

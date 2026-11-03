@@ -1,13 +1,13 @@
-import type { Req, Res } from '../../server/guards'
-import approve from '../../server/admin/approve'
-import reject from '../../server/admin/reject'
-import extend from '../../server/admin/extend'
-import revoke from '../../server/admin/revoke'
-import resetDevices from '../../server/admin/reset-devices'
-import licenses from '../../server/admin/licenses'
-import requests from '../../server/admin/requests'
-import blobVersions from '../../server/admin/blob-versions'
-import restoreBlob from '../../server/admin/restore-blob'
+import type { Req, Res } from '../../guards'
+import approve from '../../admin/approve'
+import reject from '../../admin/reject'
+import extend from '../../admin/extend'
+import revoke from '../../admin/revoke'
+import resetDevices from '../../admin/reset-devices'
+import licenses from '../../admin/licenses'
+import requests from '../../admin/requests'
+import blobVersions from '../../admin/blob-versions'
+import restoreBlob from '../../admin/restore-blob'
 
 type Handler = (req: Req, res: Res) => Promise<void> | void
 

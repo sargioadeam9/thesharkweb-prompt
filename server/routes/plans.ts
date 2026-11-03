@@ -1,6 +1,6 @@
-import type { Req, Res } from '../server/guards'
-import { getPlansConfig } from '../server/guards'
-import { getServiceClient } from '../server/supabase'
+import type { Req, Res } from '../guards'
+import { getPlansConfig } from '../guards'
+import { getServiceClient } from '../supabase'
 
 export default async function handler(req: Req, res: Res) {
   if (req.method !== 'GET') {

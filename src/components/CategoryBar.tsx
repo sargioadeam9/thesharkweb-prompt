@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Database, HelpCircle, Info, RefreshCw, Settings2 } from 'lucide-react'
 import type { Category } from '../lib/types'
 import type { View } from './Sidebar'
@@ -38,9 +39,53 @@ export default function CategoryBar({
   onManageCategories,
   onOpenBackup,
 }: CategoryBarProps) {
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ start: true, end: true })
+
+  function updateEdges() {
+    const node = scrollerRef.current
+    if (!node) return
+
+    const max = node.scrollWidth - node.clientWidth
+    const start = node.scrollLeft <= 1
+    const end = node.scrollLeft >= max - 1
+    setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }))
+  }
+
+  useEffect(() => {
+    updateEdges()
+    const node = scrollerRef.current
+    if (!node) return undefined
+
+    const observer = new ResizeObserver(updateEdges)
+    observer.observe(node)
+    window.addEventListener('resize', updateEdges)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateEdges)
+    }
+  }, [categories.length])
+
+  useEffect(() => {
+    const node = scrollerRef.current
+    if (!node) return
+    node
+      .querySelector<HTMLElement>('[aria-current="page"]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [view])
+
+  const showStartFade = !edges.start
+  const showEndFade = !edges.end
+
   return (
     <div className="flex items-center gap-2 border-b border-line px-5 py-2.5 lg:hidden">
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative min-w-0 flex-1">
+        <div
+          ref={scrollerRef}
+          onScroll={updateEdges}
+          className="flex items-center gap-1.5 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
         <button
           type="button"
           onClick={() => onSelect(null)}
@@ -83,6 +128,22 @@ export default function CategoryBar({
             </button>
           )
         })}
+        </div>
+
+        {showStartFade ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-8"
+            style={{ background: 'linear-gradient(to right, var(--color-canvas), transparent)' }}
+          />
+        ) : null}
+        {showEndFade ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8"
+            style={{ background: 'linear-gradient(to left, var(--color-canvas), transparent)' }}
+          />
+        ) : null}
       </div>
 
       <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />

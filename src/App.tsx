@@ -446,7 +446,7 @@ function App() {
         </div>
       </div>
 
-      <footer className="border-t border-line px-6 py-5">
+      <footer className="sticky bottom-0 z-10 border-t border-line bg-canvas/95 px-6 py-4 backdrop-blur-sm">
         <p className="text-center text-[11px] text-ink-muted">
           TheSharkWebPrompt v{APP_VERSION}
         </p>

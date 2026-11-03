@@ -8,8 +8,9 @@ Everything lives in the browser's IndexedDB. A JSON export is the only copy that
 ## Features
 
 - Create, edit, duplicate and delete prompts, with categories, tags, notes and favourites
+- To Do list with optional due dates, open/done filters and a clear-completed action
 - Instant search across title, content, notes and tags, plus sorting by updated, created or title
-- Undo after delete, keyboard shortcuts (`N` new prompt, `/` search, `Esc` closes dialogs)
+- Undo after delete, keyboard shortcuts (`N` new prompt, `T` To Do, `/` search, `Esc` closes dialogs)
 - Category manager: rename, and move or delete prompts when a category goes away
 - JSON backup: verified before import, merge or replace, and a guarded full reset
 - No backend, no accounts, no tracking

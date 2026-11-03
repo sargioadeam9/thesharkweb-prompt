@@ -1,11 +1,14 @@
 import Dexie, { type Table } from 'dexie'
-import type { Category, Prompt, Settings } from './types'
+import type { Category, Prompt, Settings, Todo } from './types'
 import { nowIso } from './utils'
 
 /* Kept as-is on purpose: renaming the database would orphan every prompt that
    already exists in a user's browser. Only the visible branding changed. */
 export const DB_NAME = 'PromptNookDB'
-export const DB_VERSION = 1
+
+/* Additive only. Version 2 introduces the `todos` store; Dexie upgrades in
+   place, so existing prompts, categories and settings are never touched. */
+export const DB_VERSION = 2
 
 export const DEFAULT_CATEGORY_SEEDS = [
   { id: 'cat-image-gen', name: 'Image Generation' },
@@ -18,14 +21,22 @@ class PromptNookDB extends Dexie {
   prompts!: Table<Prompt, string>
   categories!: Table<Category, string>
   settings!: Table<Settings, string>
+  todos!: Table<Todo, string>
 
   constructor() {
     super(DB_NAME)
 
-    this.version(DB_VERSION).stores({
+    /* Never edit this block: it is the schema every existing user already has. */
+    this.version(1).stores({
       prompts: 'id, categoryId, updatedAt, createdAt, title',
       categories: 'id, &name, updatedAt',
       settings: 'id',
+    })
+
+    /* Only the new store is declared here. `done` is deliberately not indexed
+       because IndexedDB keys cannot be booleans. */
+    this.version(2).stores({
+      todos: 'id, dueDate, createdAt, updatedAt',
     })
   }
 }

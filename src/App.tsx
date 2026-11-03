@@ -15,8 +15,9 @@ import Header from './components/Header'
 import PromptCard from './components/PromptCard'
 import PromptModal from './components/PromptModal'
 import Sidebar, { type View } from './components/Sidebar'
+import TodoPanel from './components/TodoPanel'
 import { APP_VERSION } from './lib/app-info'
-import { ensureSeeded } from './lib/db'
+import { db, ensureSeeded } from './lib/db'
 import * as repo from './lib/repo'
 import type { Prompt, PromptInput, SortDirection, SortField } from './lib/types'
 import { sortPrompts } from './lib/utils'
@@ -86,6 +87,23 @@ function App() {
     })
   }, [])
 
+  // A newer schema cannot upgrade while an older tab still holds the database.
+  // Without this the library looks empty until the other tab is closed.
+  useEffect(() => {
+    function onBlocked() {
+      toast.error('নতুন ভার্সন এসেছে', {
+        duration: 12000,
+        description:
+          'ট্যাব বন্ধ করে আবার ঢুকুন, পেজটা নিজেই আপডেট হয়ে যাবে। আপনার প্রম্পট আর টাস্ক কিছুই মুছবে না।',
+      })
+    }
+
+    db.on('blocked', onBlocked)
+    return () => {
+      db.on('blocked').unsubscribe(onBlocked)
+    }
+  }, [])
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return
@@ -99,6 +117,9 @@ function App() {
       if (event.key === 'n' || event.key === 'N') {
         event.preventDefault()
         setModal({ mode: 'create' })
+      } else if (event.key === 't' || event.key === 'T') {
+        event.preventDefault()
+        changeView('todos')
       } else if (event.key === '/') {
         event.preventDefault()
         focusSearch()
@@ -110,26 +131,29 @@ function App() {
   }, [])
 
   const data = useLiveQuery(async () => {
-    const [prompts, categories, settings] = await Promise.all([
+    const [prompts, categories, todos, settings] = await Promise.all([
       repo.listPrompts(),
       repo.listCategories(),
+      repo.listTodos(),
       repo.getSettings(),
     ])
     const lastBackupDay = settings.lastBackupAt
       ? localDayKey(new Date(settings.lastBackupAt))
       : null
 
-    return { prompts, categories, settings, lastBackupDay }
+    return { prompts, categories, todos, settings, lastBackupDay }
   }, [])
 
   const prompts = useMemo(() => data?.prompts ?? [], [data])
   const categories = useMemo(() => data?.categories ?? [], [data])
+  const todos = useMemo(() => data?.todos ?? [], [data])
   const settings = data?.settings
 
   // A category can disappear while it is the active view, so derive instead of storing.
   const activeView: View =
     view &&
     view !== 'favorites' &&
+    view !== 'todos' &&
     view !== 'about' &&
     view !== 'faq' &&
     !categories.some((category) => category.id === view)
@@ -148,6 +172,8 @@ function App() {
     () => prompts.filter((prompt) => prompt.isFavorite).length,
     [prompts],
   )
+
+  const todoCount = useMemo(() => todos.filter((todo) => !todo.done).length, [todos])
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -181,11 +207,13 @@ function App() {
       ? 'All Prompts'
       : activeView === 'favorites'
         ? 'Favorites'
-        : activeView === 'about'
-          ? 'About'
-          : activeView === 'faq'
-            ? 'FAQ'
-            : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
+        : activeView === 'todos'
+          ? 'To Do'
+          : activeView === 'about'
+            ? 'About'
+            : activeView === 'faq'
+              ? 'FAQ'
+              : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
 
   const sortValue = `${settings?.sortBy ?? 'updatedAt'}-${settings?.sortDirection ?? 'desc'}`
 
@@ -199,7 +227,7 @@ function App() {
   const lastBackupDay = data?.lastBackupDay ?? null
   const showBackupReminder =
     !reminderHidden &&
-    prompts.length > 0 &&
+    (prompts.length > 0 || todos.length > 0) &&
     settings !== undefined &&
     settings.backupPromptDate !== today &&
     lastBackupDay !== today
@@ -305,6 +333,7 @@ function App() {
           categories={categories}
           total={prompts.length}
           favorites={favorites}
+          todoCount={todoCount}
           counts={counts}
           view={activeView}
           onSelect={changeView}
@@ -320,12 +349,16 @@ function App() {
             sortValue={sortValue}
             onSortChange={handleSortChange}
             onNew={() => setModal({ mode: 'create' })}
-            showControls={activeView !== 'about' && activeView !== 'faq'}
+            showControls={
+              activeView !== 'about' && activeView !== 'faq' && activeView !== 'todos'
+            }
+            showNew={activeView !== 'todos'}
           />
           <CategoryBar
             categories={categories}
             total={prompts.length}
             favorites={favorites}
+            todoCount={todoCount}
             counts={counts}
             view={activeView}
             onSelect={changeView}
@@ -338,6 +371,8 @@ function App() {
               <AboutPanel />
             ) : activeView === 'faq' ? (
               <FaqPanel />
+            ) : activeView === 'todos' ? (
+              <TodoPanel todos={todos} />
             ) : (
               <>
                 <p aria-live="polite" className="sr-only">
@@ -432,6 +467,7 @@ function App() {
         <BackupPanel
           promptCount={prompts.length}
           categoryCount={categories.length}
+          todoCount={todos.length}
           lastBackupAt={settings?.lastBackupAt}
           onClose={() => setShowBackup(false)}
         />

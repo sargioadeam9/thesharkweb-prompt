@@ -18,6 +18,7 @@ type HeaderProps = {
   onSortChange: (value: string) => void
   onNew: () => void
   showControls: boolean
+  showNew?: boolean
 }
 
 function SearchField({
@@ -107,6 +108,7 @@ export default function Header({
   onSortChange,
   onNew,
   showControls,
+  showNew = true,
 }: HeaderProps) {
   return (
     <header className="shrink-0 border-b border-line">
@@ -120,14 +122,16 @@ export default function Header({
             <SortSelect value={sortValue} onChange={onSortChange} className="w-[176px]" />
           </>
         ) : null}
-        <button
-          type="button"
-          onClick={onNew}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        >
-          <Plus className="size-4" strokeWidth={2.25} aria-hidden="true" />
-          New Prompt
-        </button>
+        {showNew ? (
+          <button
+            type="button"
+            onClick={onNew}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <Plus className="size-4" strokeWidth={2.25} aria-hidden="true" />
+            New Prompt
+          </button>
+        ) : null}
       </div>
 
       <div className="px-5 pt-3 pb-3 lg:hidden">
@@ -136,14 +140,16 @@ export default function Header({
           <span className="hidden min-w-0 truncate text-[14px] font-semibold tracking-[-0.02em] sm:block">
             TheSharkWebPrompt
           </span>
-          <button
-            type="button"
-            onClick={onNew}
-            aria-label="New prompt"
-            className="ml-auto grid size-10 shrink-0 place-items-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            <Plus className="size-4" strokeWidth={2.25} aria-hidden="true" />
-          </button>
+          {showNew ? (
+            <button
+              type="button"
+              onClick={onNew}
+              aria-label="New prompt"
+              className="ml-auto grid size-10 shrink-0 place-items-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              <Plus className="size-4" strokeWidth={2.25} aria-hidden="true" />
+            </button>
+          ) : null}
           {showControls ? (
             <SortSelect value={sortValue} onChange={onSortChange} className="w-[176px] shrink-0" />
           ) : null}

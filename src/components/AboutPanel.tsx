@@ -44,6 +44,7 @@ export default function AboutPanel() {
             <p className="text-[11px] font-medium tracking-[0.06em] text-ink-faint">Shortcuts</p>
             <ul className="mt-2.5 space-y-2">
               <Shortcut label="New prompt" keys="N" />
+              <Shortcut label="To Do list" keys="T" />
               <Shortcut label="Search" keys="/" />
               <Shortcut label="Close a dialog" keys="Esc" />
             </ul>

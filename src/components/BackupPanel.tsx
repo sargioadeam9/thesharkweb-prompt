@@ -9,6 +9,7 @@ import type { BackupFile } from '../lib/types'
 type Props = {
   promptCount: number
   categoryCount: number
+  todoCount: number
   lastBackupAt?: string
   onClose: () => void
 }
@@ -23,7 +24,13 @@ function formatDate(value?: string): string {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, onClose }: Props) {
+export default function BackupPanel({
+  promptCount,
+  categoryCount,
+  todoCount,
+  lastBackupAt,
+  onClose,
+}: Props) {
   const [preview, setPreview] = useState<BackupFile | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
   const [mode, setMode] = useState<'merge' | 'replace'>('merge')
@@ -44,6 +51,7 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
   const mathOk = answer.trim() !== '' && Number(answer.trim()) === challenge.a + challenge.b
   const wordOk = word.trim().toLowerCase() === 'reset'
   const resetReady = mathOk && wordOk
+  const hasPromptData = promptCount > 0 || todoCount > 0
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -150,8 +158,8 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
       }
       toast.success(
         mode === 'replace'
-          ? `Library replaced with ${result.prompts} prompt${result.prompts === 1 ? '' : 's'}`
-          : `Merged ${result.prompts} prompt${result.prompts === 1 ? '' : 's'}`,
+          ? `Library replaced with ${result.prompts} prompt${result.prompts === 1 ? '' : 's'} and ${result.todos} task${result.todos === 1 ? '' : 's'}`
+          : `Merged ${result.prompts} prompt${result.prompts === 1 ? '' : 's'} and ${result.todos} task${result.todos === 1 ? '' : 's'}`,
       )
       setPreview(null)
       if (fileRef.current) fileRef.current.value = ''
@@ -220,14 +228,15 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
           <section>
             <h3 className="text-[13px] font-semibold text-ink">Export</h3>
             <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
-              {promptCount} prompt{promptCount === 1 ? '' : 's'} in {categoryCount} categories.
-              Last backup: {formatDate(lastBackupAt)}. Everything lives in this browser, so a JSON
-              file is your only safety net.
+              {promptCount} prompt{promptCount === 1 ? '' : 's'} in {categoryCount} categories,{' '}
+              {todoCount} task{todoCount === 1 ? '' : 's'} in To Do. Last backup:{' '}
+              {formatDate(lastBackupAt)}. Everything lives in this browser, so a JSON file is your
+              only safety net.
             </p>
             <button
               type="button"
               onClick={handleExport}
-              disabled={busy !== null || promptCount === 0}
+              disabled={busy !== null || !hasPromptData}
               className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
             >
               <Download className="size-4" strokeWidth={1.75} aria-hidden="true" />
@@ -259,12 +268,12 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
                   placeholder="you@example.com"
                   aria-label="Email address for the backup"
                   autoComplete="email"
-                  disabled={promptCount === 0}
+                  disabled={!hasPromptData}
                   className="h-9 w-full rounded-lg border border-line bg-surface px-3 text-[13px] text-ink transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 focus:outline-none disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  disabled={sendingEmail || !email.trim() || promptCount === 0}
+                  disabled={sendingEmail || !email.trim() || !hasPromptData}
                   className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-ink px-3.5 text-[12px] font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40"
                 >
                   {sendingEmail ? 'Sending…' : 'Send'}
@@ -324,7 +333,7 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
                   <ShieldCheck className="size-4" strokeWidth={2} aria-hidden="true" />
                   Backup verified
                 </p>
-                <dl className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                <dl className="mt-2 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
                   <div>
                     <dt className="text-ink-muted">Prompts</dt>
                     <dd className="text-[13px] font-semibold tabular-nums text-ink">
@@ -335,6 +344,12 @@ export default function BackupPanel({ promptCount, categoryCount, lastBackupAt, 
                     <dt className="text-ink-muted">Categories</dt>
                     <dd className="text-[13px] font-semibold tabular-nums text-ink">
                       {preview.categories.length}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-muted">Tasks</dt>
+                    <dd className="text-[13px] font-semibold tabular-nums text-ink">
+                      {preview.todos?.length ?? 0}
                     </dd>
                   </div>
                   <div>

@@ -23,6 +23,7 @@ type Res = {
 }
 
 const MAX_PROMPTS = 20_000
+const MAX_TODOS = 20_000
 const RATE_LIMIT = 5
 const RATE_WINDOW_MS = 60 * 60 * 1000
 
@@ -73,7 +74,13 @@ export default async function handler(req: Req, res: Res) {
     return
   }
 
+  if (Array.isArray(backup.todos) && backup.todos.length > MAX_TODOS) {
+    res.status(413).json({ ok: false, error: 'This library is too large to email.' })
+    return
+  }
+
   const promptCount = backup.prompts.length
+  const todoCount = Array.isArray(backup.todos) ? backup.todos.length : 0
   const sheetUrl = process.env.SHEET_WEBHOOK_URL
   const resendKey = process.env.RESEND_API_KEY
   const owner = process.env.OWNER_EMAIL
@@ -85,7 +92,12 @@ export default async function handler(req: Req, res: Res) {
       const sheetRes = await fetch(sheetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ email, prompts: promptCount, source: newsletter ? 'newsletter' : 'backup' }),
+        body: JSON.stringify({
+          email,
+          prompts: promptCount,
+          todos: todoCount,
+          source: newsletter ? 'newsletter' : 'backup',
+        }),
       })
       recorded = sheetRes.ok
     } catch {

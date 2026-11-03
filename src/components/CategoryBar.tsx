@@ -6,6 +6,7 @@ type CategoryBarProps = {
   categories: Category[]
   total: number
   favorites: number
+  todoCount: number
   counts: Record<string, number>
   view: View
   onSelect: (view: View) => void
@@ -30,6 +31,7 @@ export default function CategoryBar({
   categories,
   total,
   favorites,
+  todoCount,
   counts,
   view,
   onSelect,
@@ -56,6 +58,15 @@ export default function CategoryBar({
         >
           Favorites
           <span className="tabular-nums opacity-60">{favorites}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelect('todos')}
+          aria-current={view === 'todos' ? 'page' : undefined}
+          className={chipClass(view === 'todos')}
+        >
+          To Do
+          <span className="tabular-nums opacity-60">{todoCount}</span>
         </button>
         {categories.map((category) => {
           const active = view === category.id

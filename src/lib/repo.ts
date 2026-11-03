@@ -11,11 +11,14 @@ import type {
   Settings,
   SortDirection,
   SortField,
+  Todo,
+  TodoInput,
 } from './types'
 import { nowIso, sortCategories, uid } from './utils'
 
 const SORT_FIELDS: SortField[] = ['updatedAt', 'createdAt', 'title']
 const SORT_DIRECTIONS: SortDirection[] = ['asc', 'desc']
+const DUE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 function defaultSettings(): Settings {
   return {
@@ -223,6 +226,59 @@ export async function deleteCategory(
   return { moved, deleted }
 }
 
+/* ----------------------------------- todos ---------------------------------- */
+
+function normalizeDueDate(value: unknown): string | undefined {
+  return typeof value === 'string' && DUE_DATE_PATTERN.test(value) ? value : undefined
+}
+
+export async function listTodos(): Promise<Todo[]> {
+  return db.todos.toArray()
+}
+
+export async function createTodo(input: TodoInput): Promise<Todo> {
+  const title = requireText(input.title, 'Task', 200)
+  const timestamp = nowIso()
+
+  const todo: Todo = {
+    id: uid(),
+    title,
+    done: false,
+    dueDate: normalizeDueDate(input.dueDate),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+
+  await db.todos.add(todo)
+  return todo
+}
+
+export async function toggleTodo(id: string): Promise<Todo> {
+  const existing = await db.todos.get(id)
+  if (!existing) throw new Error('Task not found')
+
+  const next: Todo = { ...existing, done: !existing.done, updatedAt: nowIso() }
+  await db.todos.put(next)
+  return next
+}
+
+export async function deleteTodo(id: string): Promise<void> {
+  await db.todos.delete(id)
+}
+
+/** Puts a deleted task back, id and timestamps included, for the undo toast. */
+export async function restoreTodo(todo: Todo): Promise<void> {
+  await db.todos.put(todo)
+}
+
+export async function clearCompletedTodos(): Promise<number> {
+  const keys = await db.todos.filter((todo) => todo.done).primaryKeys()
+  if (!keys.length) return 0
+
+  await db.todos.bulkDelete(keys)
+  return keys.length
+}
+
 /* --------------------------------- settings --------------------------------- */
 
 export async function getSettings(): Promise<Settings> {
@@ -243,9 +299,10 @@ export async function updateSettings(patch: Partial<Settings>): Promise<Settings
 /* ------------------------------ backup / import ----------------------------- */
 
 export async function exportBackup(options: { stamp?: boolean } = {}): Promise<BackupFile> {
-  const [prompts, categories, settings] = await Promise.all([
+  const [prompts, categories, todos, settings] = await Promise.all([
     db.prompts.toArray(),
     db.categories.toArray(),
+    db.todos.toArray(),
     getSettings(),
   ])
 
@@ -259,6 +316,7 @@ export async function exportBackup(options: { stamp?: boolean } = {}): Promise<B
     exportedAt,
     prompts,
     categories,
+    todos,
     settings: {
       sortBy: settings.sortBy,
       sortDirection: settings.sortDirection,
@@ -277,6 +335,25 @@ function requireIsoDate(value: unknown, field: string): string {
     throw new Error(`${field} must be a valid date`)
   }
   return value
+}
+
+/** Older files have no `todos` key, which is treated as an empty list. */
+function parseTodos(raw: unknown): Todo[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) throw new Error('Invalid backup: todos must be an array')
+
+  return raw.map((entry, index) => {
+    if (!isRecord(entry)) throw new Error(`Invalid task at position ${index + 1}`)
+
+    return {
+      id: requireText(entry.id, `Task ${index + 1} id`, 200),
+      title: requireText(entry.title, `Task ${index + 1} title`, 200),
+      done: entry.done === true,
+      dueDate: normalizeDueDate(entry.dueDate),
+      createdAt: requireIsoDate(entry.createdAt, `Task ${index + 1} createdAt`),
+      updatedAt: requireIsoDate(entry.updatedAt, `Task ${index + 1} updatedAt`),
+    }
+  })
 }
 
 /** Throws a readable message on the first problem found. */
@@ -327,6 +404,8 @@ export function parseBackup(raw: unknown): BackupFile {
     }
   })
 
+  const todos = parseTodos(raw.todos)
+
   const settings = isRecord(raw.settings) ? raw.settings : {}
   const sortBy = SORT_FIELDS.includes(settings.sortBy as SortField)
     ? (settings.sortBy as SortField)
@@ -341,6 +420,7 @@ export function parseBackup(raw: unknown): BackupFile {
     exportedAt: raw.exportedAt as string,
     prompts,
     categories,
+    todos,
     settings: {
       sortBy,
       sortDirection,
@@ -363,12 +443,14 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
   }
 
   try {
-    await db.transaction('rw', db.prompts, db.categories, db.settings, async () => {
+    await db.transaction('rw', db.prompts, db.categories, db.settings, db.todos, async () => {
       if (mode === 'replace') {
         await db.prompts.clear()
         await db.categories.clear()
+        await db.todos.clear()
         await db.categories.bulkAdd(backup.categories)
         await db.prompts.bulkAdd(backup.prompts)
+        if (backup.todos?.length) await db.todos.bulkAdd(backup.todos)
       } else {
         const idMap = new Map<string, string>()
         const existingCategories = await db.categories.toArray()
@@ -403,6 +485,15 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
         })
 
         await db.prompts.bulkAdd(toAdd)
+
+        const existingTodoIds = new Set((await db.todos.toArray()).map((todo) => todo.id))
+        const todosToAdd = (backup.todos ?? []).map((todo) => {
+          const id = existingTodoIds.has(todo.id) ? uid() : todo.id
+          existingTodoIds.add(id)
+          return { ...todo, id }
+        })
+
+        if (todosToAdd.length) await db.todos.bulkAdd(todosToAdd)
       }
 
       const current = (await db.settings.get('app')) ?? defaultSettings()
@@ -422,7 +513,12 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
     }
   }
 
-  return { ok: true, prompts: backup.prompts.length, categories: backup.categories.length }
+  return {
+    ok: true,
+    prompts: backup.prompts.length,
+    categories: backup.categories.length,
+    todos: backup.todos?.length ?? 0,
+  }
 }
 
 /** Wipes everything this origin stores, database included. The caller reloads after. */
@@ -444,10 +540,11 @@ export async function hardReset(): Promise<void> {
 }
 
 export async function resetAll(): Promise<void> {
-  await db.transaction('rw', db.prompts, db.categories, db.settings, async () => {
+  await db.transaction('rw', db.prompts, db.categories, db.settings, db.todos, async () => {
     await db.prompts.clear()
     await db.categories.clear()
     await db.settings.clear()
+    await db.todos.clear()
   })
 
   // A half-written prompt in sessionStorage is part of the old library too.

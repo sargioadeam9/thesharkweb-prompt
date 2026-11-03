@@ -1,14 +1,15 @@
-import { Database, HelpCircle, Info, LayoutGrid, Settings2, Star } from 'lucide-react'
+import { Database, HelpCircle, Info, LayoutGrid, ListTodo, Settings2, Star } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Category } from '../lib/types'
 import BrandMark from './BrandMark'
 
-export type View = null | 'favorites' | 'about' | 'faq' | string
+export type View = null | 'favorites' | 'todos' | 'about' | 'faq' | string
 
 type SidebarProps = {
   categories: Category[]
   total: number
   favorites: number
+  todoCount: number
   counts: Record<string, number>
   view: View
   onSelect: (view: View) => void
@@ -68,6 +69,7 @@ export default function Sidebar({
   categories,
   total,
   favorites,
+  todoCount,
   counts,
   view,
   onSelect,
@@ -101,6 +103,15 @@ export default function Sidebar({
               label="Favorites"
               count={favorites}
               onClick={() => onSelect('favorites')}
+            />
+          </li>
+          <li>
+            <NavButton
+              active={view === 'todos'}
+              icon={ListTodo}
+              label="To Do"
+              count={todoCount}
+              onClick={() => onSelect('todos')}
             />
           </li>
         </ul>

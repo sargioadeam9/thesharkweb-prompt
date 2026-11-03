@@ -13,6 +13,16 @@ export interface Prompt {
   updatedAt: string
 }
 
+export interface Todo {
+  id: string
+  title: string
+  done: boolean
+  /** Local YYYY-MM-DD. Optional because a task does not need a deadline. */
+  dueDate?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Category {
   id: string
   name: string
@@ -41,6 +51,8 @@ export interface BackupFile {
   exportedAt: string
   prompts: Prompt[]
   categories: Category[]
+  /** Optional so files exported before the To Do tab still import. */
+  todos?: Todo[]
   settings: {
     sortBy: SortField
     sortDirection: SortDirection
@@ -57,6 +69,13 @@ export type PromptInput = {
   tags?: string[]
 }
 
+export type TodoInput = {
+  title: string
+  dueDate?: string
+}
+
+export type TodoFilter = 'all' | 'open' | 'done'
+
 export type ImportMode = 'merge' | 'replace'
 
 export type CategoryDeleteOptions =
@@ -64,5 +83,5 @@ export type CategoryDeleteOptions =
   | { mode: 'move'; targetId: string }
 
 export type ImportResult =
-  | { ok: true; prompts: number; categories: number }
+  | { ok: true; prompts: number; categories: number; todos: number }
   | { ok: false; error: string }

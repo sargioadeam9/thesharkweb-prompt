@@ -1,9 +1,18 @@
-import { Database, HelpCircle, Info, LayoutGrid, ListTodo, Settings2, Star } from 'lucide-react'
+import {
+  Database,
+  HelpCircle,
+  Info,
+  LayoutGrid,
+  ListTodo,
+  RefreshCw,
+  Settings2,
+  Star,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Category } from '../lib/types'
 import BrandMark from './BrandMark'
 
-export type View = null | 'favorites' | 'todos' | 'about' | 'faq' | string
+export type View = null | 'favorites' | 'todos' | 'sync' | 'about' | 'faq' | string
 
 type SidebarProps = {
   categories: Category[]
@@ -147,6 +156,12 @@ export default function Sidebar({
         </ul>
 
         <div className="mt-6 space-y-1 border-t border-line pt-3">
+          <NavButton
+            active={view === 'sync'}
+            icon={RefreshCw}
+            label="Sync"
+            onClick={() => onSelect('sync')}
+          />
           <NavButton
             active={view === 'about'}
             icon={Info}

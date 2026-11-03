@@ -74,7 +74,22 @@ export async function refreshLicense(): Promise<void> {
 
     const data = await res.json()
     if (data && data.status === 'none') {
-      setLicenseState({ license: null, loading: false })
+      // The server still tells us whether a payment is waiting, so keep that
+      // rather than throwing the whole response away.
+      setLicenseState({
+        license: data.pendingRequest
+          ? {
+              plan: 'none',
+              status: 'none',
+              expiresAt: null,
+              maxDevices: null,
+              maxPrompts: null,
+              blobCap: 0,
+              pendingRequest: true,
+            }
+          : null,
+        loading: false,
+      })
     } else {
       setLicenseState({ license: data as LicenseView, loading: false })
     }

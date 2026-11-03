@@ -15,6 +15,7 @@ import Header from './components/Header'
 import PromptCard from './components/PromptCard'
 import PromptModal from './components/PromptModal'
 import Sidebar, { type View } from './components/Sidebar'
+import SyncPanel from './components/SyncPanel'
 import TodoPanel from './components/TodoPanel'
 import { APP_VERSION } from './lib/app-info'
 import { db, ensureSeeded } from './lib/db'
@@ -154,6 +155,7 @@ function App() {
     view &&
     view !== 'favorites' &&
     view !== 'todos' &&
+    view !== 'sync' &&
     view !== 'about' &&
     view !== 'faq' &&
     !categories.some((category) => category.id === view)
@@ -209,11 +211,13 @@ function App() {
         ? 'Favorites'
         : activeView === 'todos'
           ? 'To Do'
-          : activeView === 'about'
-            ? 'About'
-            : activeView === 'faq'
-              ? 'FAQ'
-              : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
+          : activeView === 'sync'
+            ? 'Sync'
+            : activeView === 'about'
+              ? 'About'
+              : activeView === 'faq'
+                ? 'FAQ'
+                : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
 
   const sortValue = `${settings?.sortBy ?? 'updatedAt'}-${settings?.sortDirection ?? 'desc'}`
 
@@ -350,9 +354,12 @@ function App() {
             onSortChange={handleSortChange}
             onNew={() => setModal({ mode: 'create' })}
             showControls={
-              activeView !== 'about' && activeView !== 'faq' && activeView !== 'todos'
+              activeView !== 'about' &&
+              activeView !== 'faq' &&
+              activeView !== 'todos' &&
+              activeView !== 'sync'
             }
-            showNew={activeView !== 'todos'}
+            showNew={activeView !== 'todos' && activeView !== 'sync'}
           />
           <CategoryBar
             categories={categories}
@@ -373,6 +380,8 @@ function App() {
               <FaqPanel />
             ) : activeView === 'todos' ? (
               <TodoPanel todos={todos} />
+            ) : activeView === 'sync' ? (
+              <SyncPanel />
             ) : (
               <>
                 <p aria-live="polite" className="sr-only">

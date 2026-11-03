@@ -407,6 +407,31 @@ D. FINAL REPORT
 
 ---
 
+## Phase 10 prompt — profiles trigger
+
+`profiles` is created by the migration but nothing ever writes to it, so the admin licence list shows
+blank emails. Fix that with a trigger and a backfill.
+
+```
+PHASE 10 — profiles sync. Read only: Cloud-Sync-MVP.md §3, api/admin/licenses.ts.
+
+Tasks:
+1. Create supabase/migrations/0002_profiles.sql with:
+   - a function public.handle_new_user() that inserts
+     (user_id = new.id, email = coalesce(new.email, '')) into public.profiles
+     with on conflict (user_id) do update set email = excluded.email, security definer
+   - a trigger on_auth_user_created AFTER INSERT ON auth.users calling it
+   - a backfill: insert every auth.users row into public.profiles with the same conflict clause
+2. Apply it with `supabase db push`.
+3. Verify: the backfill inserted both master owners; then create nothing else.
+   Report: select count(*) from public.profiles, and the emails listed.
+4. Do not change api/admin/licenses.ts (it already reads the table).
+
+Do not touch UI (P7). Reply with the counts and stop.
+```
+
+---
+
 ## Reset Prompt (paste if the agent drifts)
 
 ```

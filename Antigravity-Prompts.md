@@ -349,6 +349,64 @@ Do not build any payment UI (P7). Reply with the new /api/plans response body an
 
 ---
 
+## Supabase setup handoff (paste once, when you are ready to give the agent infra access)
+
+```
+SUPABASE SETUP HANDOFF — you are now allowed to provision and configure cloud infrastructure for
+this project (backend only; the UI is still not yours, P7 stays in force).
+
+A. ASK ME FIRST. Send these as ONE numbered message, nothing else, then wait for my answers:
+  1. New Supabase project, or one I already created? If new: confirm organization and region
+     (recommend ap-southeast-1, Singapore — closest to Bangladesh).
+  2. Provide ONE of:
+     (a) a scoped, revocable SUPABASE_ACCESS_TOKEN so you can use the CLI, or
+     (b) project URL + anon key + service_role key + Postgres connection string.
+  3. Provide a scoped VERCEL_TOKEN so you can set env vars, or say "I will paste them myself".
+  4. Google sign-in: should you create the OAuth client with gcloud (I will authorize gcloud), or
+     will I paste GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET? Also confirm the consent-screen app name
+     and support email.
+  5. Cloudflare Turnstile: give TURNSTILE_SITE_KEY + TURNSTILE_SECRET, or say skip.
+  6. Upstash Redis: give UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or say skip.
+  7. Confirm RESEND_API_KEY and OWNER_EMAIL already exist in Vercel (the email backup feature uses
+     them). Yes/no.
+  8. Production Site URL? (default: https://thesharkweb-prompt.vercel.app)
+  9. Which Google account email will own the master license?
+
+B. HARD RULES
+  - Never print a secret back to me, never write one into a tracked file. Secrets go to .env.local
+    (gitignored) and to Vercel env only. List env var NAMES, never values.
+  - Never commit, never push, never run DROP / TRUNCATE / DELETE without asking first.
+  - Do not change application code in this phase. No UI files (P7).
+  - Stop and ask before anything that costs money or needs a paid plan.
+  - Assume the project is brand new and has no user data. If that stops being true, stop.
+
+C. SETUP ORDER — verify after each step and report one line per step
+  1. Project created or linked. Verify: `supabase projects list` shows it with the right ref.
+  2. Schema as a migration: create `supabase/migrations/0001_sync.sql` containing exactly the SQL in
+     Cloud-Sync-MVP.md §3 (7 tables, unique index on lower(txn_id), RLS enabled, three select
+     policies, zero write policies). Verify: `supabase db push` succeeds and the 7 tables exist.
+  3. Enable the Google provider with the client id/secret. Set Site URL and redirect URLs:
+     production domain, http://localhost:5173/** and http://localhost:5199/**.
+     Verify: the provider shows enabled and the redirect list contains all three.
+  4. Set every env var from Cloud-Sync-MVP.md §4 in Vercel (Production + Preview) and in .env.local.
+     The two payment numbers are PAYMENT_BKASH_NUMBER=01725111804 and
+     PAYMENT_NAGAD_NUMBER=01979996659; PLANS_JSON is the exact block from §4.
+     Verify: list names only.
+  5. Turnstile and Upstash, only if I provided them. Verify with one harmless call each.
+  6. Master license: ask me to sign in once with Google on http://localhost:5173, then read my
+     auth.users row and insert the §3.5 master row for that uid.
+     Verify: the row shows plan='master', status='active', expires_at=null.
+  7. API smoke test: `GET /api/plans` returns 3 plans and both payment numbers; `GET /api/license`
+     without a token returns 401; `GET /api/sync` with no license returns 402.
+
+D. FINAL REPORT
+  Project ref + region · env var names set (never values) · migration applied · Google provider
+  state · master uid · anything skipped and why · the exact health-check commands I can run later.
+  Remind me to revoke the tokens you were given.
+```
+
+---
+
 ## Reset Prompt (paste if the agent drifts)
 
 ```

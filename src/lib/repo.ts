@@ -1,5 +1,5 @@
-import { db, DEFAULT_CATEGORY_SEEDS, ensureSeeded, resetSeeding } from './db'
-import { clearDraft } from './draft'
+import { db, DEFAULT_CATEGORY_SEEDS, ensureSeeded, resetSeeding, setAfterSeedHook } from './db.ts'
+import { clearDraft } from './draft.ts'
 import type {
   BackupFile,
   Category,
@@ -13,8 +13,8 @@ import type {
   SortField,
   Todo,
   TodoInput,
-} from './types'
-import { nowIso, sortCategories, uid } from './utils'
+} from './types.ts'
+import { nowIso, sortCategories, uid } from './utils.ts'
 
 const SORT_FIELDS: SortField[] = ['updatedAt', 'createdAt', 'title']
 const SORT_DIRECTIONS: SortDirection[] = ['asc', 'desc']
@@ -55,18 +55,19 @@ function requireText(value: unknown, field: string, max = 4000): string {
 /* ---------------------------------- prompts --------------------------------- */
 
 export async function listPrompts(): Promise<Prompt[]> {
-  return db.prompts.toArray()
+  return db.prompts.filter((prompt) => !prompt.deletedAt).toArray()
 }
 
 export async function getPrompt(id: string): Promise<Prompt | undefined> {
-  return db.prompts.get(id)
+  const prompt = await db.prompts.get(id)
+  return prompt && !prompt.deletedAt ? prompt : undefined
 }
 
 export async function createPrompt(input: PromptInput): Promise<Prompt> {
   const title = requireText(input.title, 'Title', 200)
   const content = requireText(input.content, 'Prompt content', 20000)
   const category = await db.categories.get(input.categoryId)
-  if (!category) throw new Error('Select a valid category')
+  if (!category || category.deletedAt) throw new Error('Select a valid category')
 
   const timestamp = nowIso()
   const prompt: Prompt = {
@@ -89,7 +90,7 @@ export async function updatePrompt(
   id: string,
   patch: Partial<PromptInput> & { isFavorite?: boolean },
 ): Promise<Prompt> {
-  const existing = await db.prompts.get(id)
+  const existing = await getPrompt(id)
   if (!existing) throw new Error('Prompt not found')
 
   const next: Prompt = { ...existing }
@@ -102,7 +103,7 @@ export async function updatePrompt(
 
   if (patch.categoryId !== undefined && patch.categoryId !== existing.categoryId) {
     const category = await db.categories.get(patch.categoryId)
-    if (!category) throw new Error('Select a valid category')
+    if (!category || category.deletedAt) throw new Error('Select a valid category')
     next.categoryId = patch.categoryId
   }
 
@@ -112,16 +113,22 @@ export async function updatePrompt(
 }
 
 export async function deletePrompt(id: string): Promise<void> {
-  await db.prompts.delete(id)
+  const existing = await db.prompts.get(id)
+  if (!existing) return
+  const timestamp = nowIso()
+  await db.prompts.put({ ...existing, deletedAt: timestamp, updatedAt: timestamp })
 }
 
 /** Puts a deleted prompt back, id and timestamps included, for the undo toast. */
 export async function restorePrompt(prompt: Prompt): Promise<void> {
-  await db.prompts.put(prompt)
+  const timestamp = nowIso()
+  const next: Prompt = { ...prompt, updatedAt: timestamp }
+  delete next.deletedAt
+  await db.prompts.put(next)
 }
 
 export async function duplicatePrompt(id: string): Promise<Prompt> {
-  const existing = await db.prompts.get(id)
+  const existing = await getPrompt(id)
   if (!existing) throw new Error('Prompt not found')
 
   const timestamp = nowIso()
@@ -133,6 +140,7 @@ export async function duplicatePrompt(id: string): Promise<Prompt> {
     createdAt: timestamp,
     updatedAt: timestamp,
   }
+  delete copy.deletedAt
 
   await db.prompts.add(copy)
   return copy
@@ -140,7 +148,7 @@ export async function duplicatePrompt(id: string): Promise<Prompt> {
 
 /** Favourite is metadata, not an edit, so updatedAt is left alone on purpose. */
 export async function toggleFavorite(id: string): Promise<Prompt> {
-  const existing = await db.prompts.get(id)
+  const existing = await getPrompt(id)
   if (!existing) throw new Error('Prompt not found')
 
   const next: Prompt = { ...existing, isFavorite: !existing.isFavorite }
@@ -151,16 +159,28 @@ export async function toggleFavorite(id: string): Promise<Prompt> {
 /* -------------------------------- categories -------------------------------- */
 
 export async function listCategories(): Promise<Category[]> {
-  return sortCategories(await db.categories.toArray())
+  const live = await db.categories.filter((category) => !category.deletedAt).toArray()
+  return sortCategories(live)
 }
 
 export async function createCategory(name: string, color?: string): Promise<Category> {
   const trimmed = requireText(name, 'Category name', 40)
 
   const clash = await db.categories.where('name').equalsIgnoreCase(trimmed).first()
-  if (clash) throw new Error(`A category named "${trimmed}" already exists`)
+  if (clash && !clash.deletedAt) throw new Error(`A category named "${trimmed}" already exists`)
 
   const timestamp = nowIso()
+  if (clash && clash.deletedAt) {
+    const revived: Category = {
+      ...clash,
+      color,
+      updatedAt: timestamp,
+    }
+    delete revived.deletedAt
+    await db.categories.put(revived)
+    return revived
+  }
+
   const category: Category = {
     id: uid(),
     name: trimmed,
@@ -176,11 +196,11 @@ export async function createCategory(name: string, color?: string): Promise<Cate
 
 export async function renameCategory(id: string, name: string): Promise<Category> {
   const existing = await db.categories.get(id)
-  if (!existing) throw new Error('Category not found')
+  if (!existing || existing.deletedAt) throw new Error('Category not found')
 
   const trimmed = requireText(name, 'Category name', 40)
   const clash = await db.categories.where('name').equalsIgnoreCase(trimmed).first()
-  if (clash && clash.id !== id) throw new Error(`A category named "${trimmed}" already exists`)
+  if (clash && clash.id !== id && !clash.deletedAt) throw new Error(`A category named "${trimmed}" already exists`)
 
   const next: Category = { ...existing, name: trimmed, updatedAt: nowIso() }
   await db.categories.put(next)
@@ -192,8 +212,9 @@ export async function deleteCategory(
   options: CategoryDeleteOptions,
 ): Promise<{ moved: number; deleted: number }> {
   const existing = await db.categories.get(id)
-  if (!existing) throw new Error('Category not found')
-  if ((await db.categories.count()) <= 1) {
+  if (!existing || existing.deletedAt) throw new Error('Category not found')
+  const liveCount = await db.categories.filter((c) => !c.deletedAt).count()
+  if (liveCount <= 1) {
     throw new Error('Keep at least one category')
   }
 
@@ -201,14 +222,17 @@ export async function deleteCategory(
   let deleted = 0
 
   await db.transaction('rw', db.prompts, db.categories, async () => {
-    const affected = await db.prompts.where('categoryId').equals(id).toArray()
+    const affected = await db.prompts
+      .filter((prompt) => prompt.categoryId === id && !prompt.deletedAt)
+      .toArray()
+
+    const timestamp = nowIso()
 
     if (options.mode === 'move' && affected.length) {
       if (options.targetId === id) throw new Error('Pick a different target category')
       const target = await db.categories.get(options.targetId)
-      if (!target) throw new Error('Target category not found')
+      if (!target || target.deletedAt) throw new Error('Target category not found')
 
-      const timestamp = nowIso()
       await db.prompts.bulkPut(
         affected.map((prompt) => ({ ...prompt, categoryId: target.id, updatedAt: timestamp })),
       )
@@ -216,11 +240,17 @@ export async function deleteCategory(
     }
 
     if (options.mode === 'delete' && affected.length) {
-      await db.prompts.bulkDelete(affected.map((prompt) => prompt.id))
+      await db.prompts.bulkPut(
+        affected.map((prompt) => ({ ...prompt, deletedAt: timestamp, updatedAt: timestamp })),
+      )
       deleted = affected.length
     }
 
-    await db.categories.delete(id)
+    await db.categories.put({
+      ...existing,
+      deletedAt: timestamp,
+      updatedAt: timestamp,
+    })
   })
 
   return { moved, deleted }
@@ -233,7 +263,7 @@ function normalizeDueDate(value: unknown): string | undefined {
 }
 
 export async function listTodos(): Promise<Todo[]> {
-  return db.todos.toArray()
+  return db.todos.filter((todo) => !todo.deletedAt).toArray()
 }
 
 export async function createTodo(input: TodoInput): Promise<Todo> {
@@ -255,7 +285,7 @@ export async function createTodo(input: TodoInput): Promise<Todo> {
 
 export async function toggleTodo(id: string): Promise<Todo> {
   const existing = await db.todos.get(id)
-  if (!existing) throw new Error('Task not found')
+  if (!existing || existing.deletedAt) throw new Error('Task not found')
 
   const next: Todo = { ...existing, done: !existing.done, updatedAt: nowIso() }
   await db.todos.put(next)
@@ -263,20 +293,33 @@ export async function toggleTodo(id: string): Promise<Todo> {
 }
 
 export async function deleteTodo(id: string): Promise<void> {
-  await db.todos.delete(id)
+  const existing = await db.todos.get(id)
+  if (!existing) return
+  const timestamp = nowIso()
+  await db.todos.put({ ...existing, deletedAt: timestamp, updatedAt: timestamp })
 }
 
 /** Puts a deleted task back, id and timestamps included, for the undo toast. */
 export async function restoreTodo(todo: Todo): Promise<void> {
-  await db.todos.put(todo)
+  const timestamp = nowIso()
+  const next: Todo = { ...todo, updatedAt: timestamp }
+  delete next.deletedAt
+  await db.todos.put(next)
 }
 
 export async function clearCompletedTodos(): Promise<number> {
-  const keys = await db.todos.filter((todo) => todo.done).primaryKeys()
-  if (!keys.length) return 0
+  const completed = await db.todos.filter((todo) => todo.done && !todo.deletedAt).toArray()
+  if (!completed.length) return 0
 
-  await db.todos.bulkDelete(keys)
-  return keys.length
+  const timestamp = nowIso()
+  await db.todos.bulkPut(
+    completed.map((todo) => ({
+      ...todo,
+      deletedAt: timestamp,
+      updatedAt: timestamp,
+    })),
+  )
+  return completed.length
 }
 
 /* --------------------------------- settings --------------------------------- */
@@ -299,12 +342,28 @@ export async function updateSettings(patch: Partial<Settings>): Promise<Settings
 /* ------------------------------ backup / import ----------------------------- */
 
 export async function exportBackup(options: { stamp?: boolean } = {}): Promise<BackupFile> {
-  const [prompts, categories, todos, settings] = await Promise.all([
-    db.prompts.toArray(),
-    db.categories.toArray(),
-    db.todos.toArray(),
+  const [rawPrompts, rawCategories, rawTodos, settings] = await Promise.all([
+    db.prompts.filter((p) => !p.deletedAt).toArray(),
+    db.categories.filter((c) => !c.deletedAt).toArray(),
+    db.todos.filter((t) => !t.deletedAt).toArray(),
     getSettings(),
   ])
+
+  const prompts: Prompt[] = rawPrompts.map((p) => {
+    const copy = { ...p }
+    delete copy.deletedAt
+    return copy
+  })
+  const categories: Category[] = rawCategories.map((c) => {
+    const copy = { ...c }
+    delete copy.deletedAt
+    return copy
+  })
+  const todos: Todo[] = rawTodos.map((t) => {
+    const copy = { ...t }
+    delete copy.deletedAt
+    return copy
+  })
 
   const exportedAt = nowIso()
   const stamp = options.stamp ?? true
@@ -321,6 +380,36 @@ export async function exportBackup(options: { stamp?: boolean } = {}): Promise<B
       sortBy: settings.sortBy,
       sortDirection: settings.sortDirection,
       lastBackupAt: stamp ? exportedAt : settings.lastBackupAt,
+      backupReminderDismissed: settings.backupReminderDismissed,
+    },
+  }
+}
+
+/**
+ * F1: Export for cloud sync — identical to exportBackup({stamp:false}) EXCEPT it keeps
+ * records that have deletedAt (and preserves the deletedAt field) so deletes reach the server.
+ */
+export async function exportSyncPayload(): Promise<BackupFile> {
+  const [prompts, categories, todos, settings] = await Promise.all([
+    db.prompts.toArray(),
+    db.categories.toArray(),
+    db.todos.toArray(),
+    getSettings(),
+  ])
+
+  const exportedAt = nowIso()
+
+  return {
+    app: 'TheSharkWebPrompt',
+    formatVersion: 1,
+    exportedAt,
+    prompts,
+    categories,
+    todos,
+    settings: {
+      sortBy: settings.sortBy,
+      sortDirection: settings.sortDirection,
+      lastBackupAt: settings.lastBackupAt,
       backupReminderDismissed: settings.backupReminderDismissed,
     },
   }
@@ -350,6 +439,10 @@ function parseTodos(raw: unknown): Todo[] {
       title: requireText(entry.title, `Task ${index + 1} title`, 200),
       done: entry.done === true,
       dueDate: normalizeDueDate(entry.dueDate),
+      deletedAt:
+        typeof entry.deletedAt === 'string'
+          ? requireIsoDate(entry.deletedAt, `Task ${index + 1} deletedAt`)
+          : undefined,
       createdAt: requireIsoDate(entry.createdAt, `Task ${index + 1} createdAt`),
       updatedAt: requireIsoDate(entry.updatedAt, `Task ${index + 1} updatedAt`),
     }
@@ -377,6 +470,10 @@ export function parseBackup(raw: unknown): BackupFile {
       name: requireText(entry.name, `Category ${index + 1} name`, 40),
       color: typeof entry.color === 'string' ? entry.color : undefined,
       isDefault: entry.isDefault === true,
+      deletedAt:
+        typeof entry.deletedAt === 'string'
+          ? requireIsoDate(entry.deletedAt, `Category ${index + 1} deletedAt`)
+          : undefined,
       createdAt: requireIsoDate(entry.createdAt, `Category ${index + 1} createdAt`),
       updatedAt: requireIsoDate(entry.updatedAt, `Category ${index + 1} updatedAt`),
     }
@@ -399,6 +496,10 @@ export function parseBackup(raw: unknown): BackupFile {
       notes: typeof entry.notes === 'string' ? entry.notes : undefined,
       tags: normalizeTags(entry.tags),
       isFavorite: entry.isFavorite === true,
+      deletedAt:
+        typeof entry.deletedAt === 'string'
+          ? requireIsoDate(entry.deletedAt, `Prompt ${index + 1} deletedAt`)
+          : undefined,
       createdAt: requireIsoDate(entry.createdAt, `Prompt ${index + 1} createdAt`),
       updatedAt: requireIsoDate(entry.updatedAt, `Prompt ${index + 1} updatedAt`),
     }
@@ -521,6 +622,89 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
   }
 }
 
+/**
+ * F2: Remote cloud sync merge — preserves exact IDs (no duplicate bug).
+ * Compares updatedAt timestamps: remote newer wins; propagates remote tombstones
+ * and revives locally tombstoned items when the remote version is newer and live.
+ */
+export async function mergeFromRemote(
+  rawPayload: unknown,
+): Promise<{ added: number; updated: number }> {
+  const backup = parseBackup(rawPayload)
+  let added = 0
+  let updated = 0
+
+  await db.transaction('rw', db.prompts, db.categories, db.todos, db.settings, async () => {
+    // 1. Categories
+    const localCategories = new Map(
+      (await db.categories.toArray()).map((cat) => [cat.id, cat]),
+    )
+
+    for (const remoteCat of backup.categories) {
+      const localCat = localCategories.get(remoteCat.id)
+      if (!localCat) {
+        await db.categories.add(remoteCat)
+        localCategories.set(remoteCat.id, remoteCat)
+        added++
+      } else {
+        const remoteTime = new Date(remoteCat.updatedAt).getTime()
+        const localTime = new Date(localCat.updatedAt).getTime()
+        if (remoteTime > localTime) {
+          await db.categories.put(remoteCat)
+          localCategories.set(remoteCat.id, remoteCat)
+          updated++
+        }
+      }
+    }
+
+    // 2. Prompts
+    const localPrompts = new Map(
+      (await db.prompts.toArray()).map((prompt) => [prompt.id, prompt]),
+    )
+
+    for (const remotePrompt of backup.prompts) {
+      const localPrompt = localPrompts.get(remotePrompt.id)
+      if (!localPrompt) {
+        await db.prompts.add(remotePrompt)
+        localPrompts.set(remotePrompt.id, remotePrompt)
+        added++
+      } else {
+        const remoteTime = new Date(remotePrompt.updatedAt).getTime()
+        const localTime = new Date(localPrompt.updatedAt).getTime()
+        if (remoteTime > localTime) {
+          await db.prompts.put(remotePrompt)
+          localPrompts.set(remotePrompt.id, remotePrompt)
+          updated++
+        }
+      }
+    }
+
+    // 3. Todos
+    const localTodos = new Map(
+      (await db.todos.toArray()).map((todo) => [todo.id, todo]),
+    )
+
+    for (const remoteTodo of backup.todos ?? []) {
+      const localTodo = localTodos.get(remoteTodo.id)
+      if (!localTodo) {
+        await db.todos.add(remoteTodo)
+        localTodos.set(remoteTodo.id, remoteTodo)
+        added++
+      } else {
+        const remoteTime = new Date(remoteTodo.updatedAt).getTime()
+        const localTime = new Date(localTodo.updatedAt).getTime()
+        if (remoteTime > localTime) {
+          await db.todos.put(remoteTodo)
+          localTodos.set(remoteTodo.id, remoteTodo)
+          updated++
+        }
+      }
+    }
+  })
+
+  return { added, updated }
+}
+
 /** Wipes everything this origin stores, database included. The caller reloads after. */
 export async function hardReset(): Promise<void> {
   clearDraft()
@@ -555,3 +739,51 @@ export async function resetAll(): Promise<void> {
 
 /** Re-exported so the UI can show the locked default categories. */
 export const defaultCategories = DEFAULT_CATEGORY_SEEDS
+
+export async function purgeTombstonesOlderThan(days = 90): Promise<{
+  prompts: number
+  categories: number
+  todos: number
+}> {
+  const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000
+
+  const isOlder = (deletedAt?: string) => {
+    if (!deletedAt) return false
+    const time = new Date(deletedAt).getTime()
+    return !Number.isNaN(time) && time < cutoffMs
+  }
+
+  let purgedPrompts = 0
+  let purgedCategories = 0
+  let purgedTodos = 0
+
+  await db.transaction('rw', db.prompts, db.categories, db.todos, async () => {
+    const oldPrompts = await db.prompts.filter((p) => isOlder(p.deletedAt)).primaryKeys()
+    if (oldPrompts.length) {
+      await db.prompts.bulkDelete(oldPrompts)
+      purgedPrompts = oldPrompts.length
+    }
+
+    const oldCategories = await db.categories.filter((c) => isOlder(c.deletedAt)).primaryKeys()
+    if (oldCategories.length) {
+      await db.categories.bulkDelete(oldCategories)
+      purgedCategories = oldCategories.length
+    }
+
+    const oldTodos = await db.todos.filter((t) => isOlder(t.deletedAt)).primaryKeys()
+    if (oldTodos.length) {
+      await db.todos.bulkDelete(oldTodos)
+      purgedTodos = oldTodos.length
+    }
+  })
+
+  return {
+    prompts: purgedPrompts,
+    categories: purgedCategories,
+    todos: purgedTodos,
+  }
+}
+
+setAfterSeedHook(async () => {
+  await purgeTombstonesOlderThan(90)
+})

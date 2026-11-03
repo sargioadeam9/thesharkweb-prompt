@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
-import type { Category, Prompt, Settings, Todo } from './types'
-import { nowIso } from './utils'
+import type { Category, Prompt, Settings, Todo } from './types.ts'
+import { nowIso } from './utils.ts'
 
 /* Kept as-is on purpose: renaming the database would orphan every prompt that
    already exists in a user's browser. Only the visible branding changed. */
@@ -44,6 +44,11 @@ class PromptNookDB extends Dexie {
 export const db = new PromptNookDB()
 
 let seeding: Promise<void> | null = null
+let afterSeedHook: (() => Promise<void>) | null = null
+
+export function setAfterSeedHook(hook: () => Promise<void>): void {
+  afterSeedHook = hook
+}
 
 async function seed(): Promise<void> {
   const now = nowIso()
@@ -61,7 +66,7 @@ async function seed(): Promise<void> {
       })
     }
 
-    const categoryCount = await db.categories.count()
+    const categoryCount = await db.categories.filter((cat) => !cat.deletedAt).count()
     if (categoryCount > 0) return
 
     await db.categories.bulkAdd(
@@ -73,6 +78,14 @@ async function seed(): Promise<void> {
       })),
     )
   })
+
+  if (afterSeedHook) {
+    try {
+      await afterSeedHook()
+    } catch (err) {
+      console.error('After seed hook error:', err)
+    }
+  }
 }
 
 /** Idempotent. Safe to call on every app start and in React StrictMode. */

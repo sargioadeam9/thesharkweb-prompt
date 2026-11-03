@@ -9,6 +9,7 @@ export interface Prompt {
   notes?: string
   tags?: string[]
   isFavorite?: boolean
+  deletedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -19,6 +20,7 @@ export interface Todo {
   done: boolean
   /** Local YYYY-MM-DD. Optional because a task does not need a deadline. */
   dueDate?: string
+  deletedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -28,6 +30,7 @@ export interface Category {
   name: string
   color?: string
   isDefault?: boolean
+  deletedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -42,6 +45,8 @@ export interface Settings {
   /** Local date key (YYYY-MM-DD) of the last day the reminder was shown. */
   backupPromptDate?: string
   categoriesInitialized?: boolean
+  syncVersion?: number
+  deviceId?: string
 }
 
 /** Shape written by exportBackup() and accepted by importBackup(). */

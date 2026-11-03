@@ -1,6 +1,6 @@
-import type { Req, Res } from '../../api/_guards'
-import { requireAdmin } from '../../api/_guards'
-import { getServiceClient } from '../../api/_supabase'
+import type { Req, Res } from '../guards'
+import { requireAdmin } from '../guards'
+import { getServiceClient } from '../supabase'
 
 export default async function handler(req: Req, res: Res) {
   if (req.method !== 'GET') {

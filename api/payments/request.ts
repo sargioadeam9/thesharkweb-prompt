@@ -1,7 +1,7 @@
-import type { Req, Res } from '../_guards'
-import { getPlansConfig, limited, requireUser } from '../_guards'
-import { getServiceClient } from '../_supabase'
-import { sendPaymentReceivedEmail } from '../_email'
+import type { Req, Res } from '../../server/guards'
+import { getPlansConfig, limited, requireUser } from '../../server/guards'
+import { getServiceClient } from '../../server/supabase'
+import { sendPaymentReceivedEmail } from '../../server/email'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

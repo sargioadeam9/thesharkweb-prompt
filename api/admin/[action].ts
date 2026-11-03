@@ -1,4 +1,4 @@
-import type { Req, Res } from '../_guards'
+import type { Req, Res } from '../../server/guards'
 import approve from '../../server/admin/approve'
 import reject from '../../server/admin/reject'
 import extend from '../../server/admin/extend'

@@ -1,6 +1,6 @@
-import type { Req, Res, LicenseRow } from './_guards'
-import { licenseState, limited, requireUser } from './_guards'
-import { getServiceClient } from './_supabase'
+import type { Req, Res, LicenseRow } from '../server/guards'
+import { licenseState, limited, requireUser } from '../server/guards'
+import { getServiceClient } from '../server/supabase'
 import { parseBackup } from '../src/lib/repo'
 
 function isRecord(value: unknown): value is Record<string, unknown> {

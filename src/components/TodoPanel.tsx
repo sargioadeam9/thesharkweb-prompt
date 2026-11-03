@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { CalendarDays, Check, ListTodo, Plus, Trash2, X } from 'lucide-react'
+import { CalendarDays, Check, ListTodo, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import * as repo from '../lib/repo'
 import type { Todo, TodoFilter } from '../lib/types'
+import DatePicker from './DatePicker'
 
 const FILTERS: { value: TodoFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -120,7 +121,6 @@ export default function TodoPanel({ todos }: { todos: Todo[] }) {
   const [filter, setFilter] = useState<TodoFilter>('all')
   const [today] = useState(() => localDayKey(new Date()))
   const boxRef = useRef<HTMLTextAreaElement>(null)
-  const dateRef = useRef<HTMLInputElement>(null)
 
   const sorted = useMemo(
     () =>
@@ -153,18 +153,6 @@ export default function TodoPanel({ todos }: { todos: Todo[] }) {
     box.style.height = 'auto'
     box.style.height = `${Math.min(box.scrollHeight, MAX_BOX_HEIGHT)}px`
   }, [title])
-
-  function openDatePicker() {
-    const input = dateRef.current
-    if (!input) return
-
-    try {
-      input.showPicker()
-    } catch {
-      input.focus()
-      input.click()
-    }
-  }
 
   async function handleAdd(event: FormEvent) {
     event.preventDefault()
@@ -261,39 +249,10 @@ export default function TodoPanel({ todos }: { todos: Todo[] }) {
         />
 
         <div className="flex items-stretch gap-2">
-          <div className="relative flex h-10 items-stretch overflow-hidden rounded-lg border border-line bg-surface transition-colors focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
-            <button
-              type="button"
-              onClick={openDatePicker}
-              className="inline-flex items-center gap-1.5 px-2.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
-            >
-              <CalendarDays className="size-4 shrink-0 text-ink-faint" strokeWidth={1.75} aria-hidden="true" />
-              <span className="whitespace-nowrap tabular-nums">
-                {dueDate ? formatDueDate(dueDate) : 'Due date'}
-              </span>
-            </button>
-            {dueDate ? (
-              <button
-                type="button"
-                onClick={() => setDueDate('')}
-                aria-label="Clear due date"
-                className="grid w-7 place-items-center border-l border-line text-ink-faint transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
-              >
-                <X className="size-3.5" strokeWidth={2} aria-hidden="true" />
-              </button>
-            ) : null}
-
-            {/* Kept invisible so the native picker can be opened from the card. */}
-            <input
-              ref={dateRef}
-              type="date"
-              tabIndex={-1}
-              aria-hidden="true"
-              value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
-              className="pointer-events-none absolute size-0 opacity-0"
-            />
-          </div>
+          <DatePicker
+            value={dueDate || undefined}
+            onChange={(next) => setDueDate(next ?? '')}
+          />
 
           <button
             type="submit"

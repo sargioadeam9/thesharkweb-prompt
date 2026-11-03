@@ -26,3 +26,6 @@ dist-ssr
 # local artefacts
 .shots/
 .workbuddy-ai/
+
+# supabase CLI local state (project ref, pooler url)
+supabase/.temp/

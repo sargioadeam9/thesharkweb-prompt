@@ -1,5 +1,5 @@
 import type { User } from '@supabase/supabase-js'
-import { getServiceClient, verifyUser } from './_supabase.ts'
+import { getServiceClient, verifyUser } from './_supabase'
 
 export type Req = {
   method?: string

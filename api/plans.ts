@@ -1,6 +1,6 @@
-import type { Req, Res } from './_guards.ts'
-import { getPlansConfig } from './_guards.ts'
-import { getServiceClient } from './_supabase.ts'
+import type { Req, Res } from './_guards'
+import { getPlansConfig } from './_guards'
+import { getServiceClient } from './_supabase'
 
 export default async function handler(req: Req, res: Res) {
   if (req.method !== 'GET') {

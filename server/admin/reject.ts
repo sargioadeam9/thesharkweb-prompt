@@ -1,7 +1,7 @@
-import type { Req, Res } from '../../api/_guards.ts'
-import { requireAdmin } from '../../api/_guards.ts'
-import { getServiceClient } from '../../api/_supabase.ts'
-import { sendPaymentRejectedEmail } from '../../api/_email.ts'
+import type { Req, Res } from '../../api/_guards'
+import { requireAdmin } from '../../api/_guards'
+import { getServiceClient } from '../../api/_supabase'
+import { sendPaymentRejectedEmail } from '../../api/_email'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

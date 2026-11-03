@@ -41,7 +41,9 @@ Rules for the whole session:
 9. Prices and limits come from §1 and PLANS_JSON only. Never hardcode 49, 390, 1490, 3, 500 or 8 MB.
 10. Blocked by a missing env var, a permission error, or something the spec does not cover? STOP and
     ask me in one short question. Never choose an alternative.
-11. No git trailers, no push.
+11. Payment destination numbers come from PAYMENT_BKASH_NUMBER (01725111804) and
+    PAYMENT_NAGAD_NUMBER (01979996659) — served by /api/plans, never hardcoded in code.
+12. No git trailers, no push.
 
 Prices for reference (they live in PLANS_JSON, not in code): Monthly ৳49 / 3 devices / 500 prompts,
 Annual ৳390 / unlimited, Lifetime ৳1,490 one-time.
@@ -322,6 +324,27 @@ F10 Run `npm run build && npm run lint`, then re-run the §9 backend table (1–
     counts from IndexedDB or the DB. Any criterion you cannot prove stays FAIL.
 
 Reply with a fix-by-fix table (F1–F10: done / not done), the new verification output, and stop.
+```
+
+---
+
+## Phase 9 prompt — payment numbers
+
+```
+PHASE 9 — payment destination numbers. Read only: Cloud-Sync-MVP.md §4, §6 Phase 3 (the
+/api/plans row), §6.5 (fetchPlans signature), §7.2. Small delta only.
+
+Tasks:
+1. api/plans.ts — return `{ plans: PLANS_JSON, payment: { bkash, nagad } }` where the two numbers
+   come from process.env.PAYMENT_BKASH_NUMBER and process.env.PAYMENT_NAGAD_NUMBER. If either env var
+   is missing, return an empty string for it and add one audit_log row `data.error` with
+   reason 'missing_payment_number'. Never hardcode 01725111804 or 01979996659 in code.
+2. src/lib/sync-types.ts + src/lib/api-client.ts — widen the fetchPlans result type to
+   `{ plans: Plan[]; payment: { bkash: string; nagad: string } }`.
+3. .env.example — the two keys are already listed with the real numbers; keep them.
+4. Run `npm run build && npm run lint`.
+
+Do not build any payment UI (P7). Reply with the new /api/plans response body and stop.
 ```
 
 ---

@@ -238,7 +238,12 @@ TURNSTILE_SECRET
 RESEND_API_KEY        (existing)
 OWNER_EMAIL           (existing)
 PLANS_JSON            (below)
+PAYMENT_BKASH_NUMBER  (01725111804)
+PAYMENT_NAGAD_NUMBER  (01979996659)
 ```
+
+The two payment numbers are public by design: they are returned by `/api/plans` and rendered by the
+UI. Keeping them in env means changing a number does not need a rebuild.
 
 `PLANS_JSON` — the only pricing source. Set exactly this in Vercel (matches §1):
 
@@ -308,7 +313,7 @@ Same style as `api/email-backup.ts`. Never log prompt content.
 
 | Route | Contract |
 |---|---|
-| `GET /api/plans` | 200 `{ plans: PLANS_JSON }`, no auth |
+| `GET /api/plans` | 200 `{ plans: PLANS_JSON, payment: { bkash: PAYMENT_BKASH_NUMBER, nagad: PAYMENT_NAGAD_NUMBER } }`, no auth |
 | `GET /api/license` | Auth. 200 `{ status:'none' }` or `{ plan, status, expiresAt, maxDevices, maxPrompts, blobCap, devices:[{id,label,lastSeenAt}] }`. 401 without token |
 | `POST /api/payments/request` | Body `{ plan, method, txnId, senderNumber, turnstileToken, honeypot, elapsedMs }`. Reject: honeypot, `elapsedMs<2000`, Turnstile fail, plan not in `PLANS_JSON`, existing pending, unique txn conflict → 400 with §7.4 text. Success 201 `{ requestId, status:'pending' }`. Limits 3/day per uid, 10/day per IP |
 | `GET /api/sync` | Auth. Not active → 402 `{ error:'no_active_license' }`. No blob → 404 `{ error:'never_synced' }`. Else 200 `{ version, payload, updatedAt }`. 60/min per uid × multiplier |
@@ -371,7 +376,7 @@ export function refreshLicense(): Promise<void>
 
 // src/lib/api-client.ts
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string; code?: string }
-export function fetchPlans(): Promise<Result<{ plans: Plan[] }>>
+export function fetchPlans(): Promise<Result<{ plans: Plan[]; payment: { bkash: string; nagad: string } }>>
 export function fetchLicense(): Promise<Result<LicenseView | { status: 'none' }>>
 export function submitPayment(input: PaymentInput): Promise<Result<{ requestId: string }>>
 export function adminListRequests(): Promise<Result<AdminRequests>>
@@ -412,6 +417,7 @@ No JSX in any of these files.
 ### 7.2 Payment form
 
 - `Send {price} BDT to {number} ({method})`
+- Numbers: bKash `01725111804`, Nagad `01979996659` (from `/api/plans`, never hardcoded in the UI)
 - `Reference: {TSW-XXXXXX}`
 - Fields: `Transaction ID (TrxID)`, `Your {method} number`
 - Submit: `I have sent the money`
@@ -469,6 +475,7 @@ worked for you: reply to your activation email.
 | Recovery | last 3 blob versions, admin restore only |
 | Conflicts | newer `updatedAt` wins; 409 → merge + retry once |
 | Payment | manual bKash/Nagad, Turnstile, `unique(lower(txn_id))` |
+| Payment numbers | bKash `01725111804`, Nagad `01979996659` — served from env via `/api/plans`, never in code |
 | Admin | API routes only; **admin UI is the owner's design pass** |
 | UI/components | agent never creates or restyles them (P7, P13) |
 | Router | owner's design pass (pathname split + vercel rewrite) |
@@ -481,7 +488,8 @@ worked for you: reply to your activation email.
 
 ### Backend (agent must prove these)
 
-1. `/api/plans` returns exactly three plans priced 49 / 390 / 1490 with the caps from §1.
+1. `/api/plans` returns exactly three plans priced 49 / 390 / 1490 with the caps from §1 **and** the
+   two payment numbers from §4 (`bkash: '01725111804'`, `nagad: '01979996659'`).
 2. No token / forged token → 401 or 403 on every protected route, never 500.
 3. No license → `/api/sync` 402; never-synced → 404 on GET.
 4. `PUT /api/sync` beyond the blob cap → 413 with `bytes` and `cap`.
@@ -530,7 +538,7 @@ worked for you: reply to your activation email.
 - [ ] Checkpoint: build + tombstone script (2 prompts, delete 1, reload → 1 visible, 2 rows in IndexedDB)
 
 ### Phase 3
-- [ ] `GET /api/plans`
+- [ ] `GET /api/plans` (plans + bKash/Nagad numbers from env)
 - [ ] `GET /api/license`
 - [ ] `POST /api/payments/request`
 - [ ] `GET /api/sync`, `PUT /api/sync` (blob cap, prompt cap, device cap, history, CAS)

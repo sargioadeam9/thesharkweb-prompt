@@ -325,14 +325,14 @@ function App() {
   )
 
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas text-ink">
+    <div className="flex h-dvh flex-col overflow-hidden bg-canvas text-ink">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:border focus:border-line focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink focus:shadow-lg"
       >
         Skip to prompts
       </a>
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         <Sidebar
           categories={categories}
           total={prompts.length}
@@ -345,7 +345,7 @@ function App() {
           onOpenBackup={() => setShowBackup(true)}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <Header
             title={title}
             query={query}
@@ -373,7 +373,11 @@ function App() {
             onOpenBackup={() => setShowBackup(true)}
           />
 
-          <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto focus:outline-none"
+          >
             {activeView === 'about' ? (
               <AboutPanel onOpenSync={() => changeView('sync')} />
             ) : activeView === 'faq' ? (
@@ -446,7 +450,7 @@ function App() {
         </div>
       </div>
 
-      <footer className="sticky bottom-0 z-10 border-t border-line bg-canvas/95 px-6 py-4 backdrop-blur-sm">
+      <footer className="shrink-0 border-t border-line bg-canvas px-6 py-4">
         <p className="text-center text-[11px] text-ink-muted">
           TheSharkWebPrompt v{APP_VERSION}
         </p>

@@ -86,7 +86,7 @@ export default function Sidebar({
   onOpenBackup,
 }: SidebarProps) {
   return (
-    <aside className="hidden w-[232px] shrink-0 flex-col border-r border-line bg-surface lg:flex">
+    <aside className="hidden h-full min-h-0 w-[232px] shrink-0 flex-col border-r border-line bg-surface lg:flex">
       <div className="flex h-[72px] shrink-0 items-center gap-2.5 border-b border-line px-5">
         <BrandMark />
         <span className="truncate text-[14px] font-semibold tracking-[-0.02em]">
@@ -94,8 +94,8 @@ export default function Sidebar({
         </span>
       </div>
 
-      <nav aria-label="Library" className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
+      <nav aria-label="Library" className="flex min-h-0 flex-1 flex-col px-3 py-4">
+        <ul className="shrink-0 space-y-1">
           <li>
             <NavButton
               active={view === null}
@@ -125,7 +125,7 @@ export default function Sidebar({
           </li>
         </ul>
 
-        <div className="mt-6 mb-2 flex items-center justify-between px-3">
+        <div className="mt-6 mb-2 flex shrink-0 items-center justify-between px-3">
           <p className="text-[11px] font-medium tracking-[0.06em] text-ink-faint">Categories</p>
           <button
             type="button"
@@ -136,7 +136,7 @@ export default function Sidebar({
             <Settings2 className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
-        <ul className="space-y-0.5">
+        <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto scroll-smooth pr-0.5 [scrollbar-width:thin]">
           {categories.map((category) => {
             const active = view === category.id
             return (
@@ -155,7 +155,7 @@ export default function Sidebar({
           })}
         </ul>
 
-        <div className="mt-6 space-y-1 border-t border-line pt-3">
+        <div className="mt-6 shrink-0 space-y-1 border-t border-line pt-3">
           <NavButton
             active={view === 'sync'}
             icon={RefreshCw}

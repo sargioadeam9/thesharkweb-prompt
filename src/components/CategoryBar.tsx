@@ -79,7 +79,7 @@ export default function CategoryBar({
   const showEndFade = !edges.end
 
   return (
-    <div className="flex items-center gap-2 border-b border-line px-5 py-2.5 lg:hidden">
+    <div className="flex shrink-0 items-center gap-2 border-b border-line px-5 py-2.5 lg:hidden">
       <div className="relative min-w-0 flex-1">
         <div
           ref={scrollerRef}

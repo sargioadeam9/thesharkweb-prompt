@@ -37,7 +37,7 @@ export default function AboutPanel() {
           <dl className="overflow-hidden rounded-2xl border border-line bg-surface">
             <Row label="Version" value={APP_VERSION} />
             <Row label="License" value={`${APP_LICENSE} License`} />
-            <Row label="Storage" value="This browser only" />
+            <Row label="Storage" value="This browser · Live Sync optional" />
           </dl>
 
           <div className="rounded-2xl border border-line bg-surface p-4">
@@ -51,8 +51,9 @@ export default function AboutPanel() {
           </div>
 
           <p className="px-1 text-[11px] leading-relaxed text-ink-muted">
-            Local-first by design. Prompts stay in this browser. The JSON backup is the only copy
-            that travels, and only when you export it or ask us to email it.
+            Local-first by design. Prompts stay in this browser. Nothing leaves it unless you
+            export a JSON backup, ask us to email one, or turn on Live Sync to share the library
+            across your own devices.
           </p>
         </div>
       </div>

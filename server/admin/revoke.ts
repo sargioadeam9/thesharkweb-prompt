@@ -1,6 +1,6 @@
-import type { Req, Res, LicenseRow } from '../_guards.ts'
-import { requireAdmin } from '../_guards.ts'
-import { getServiceClient } from '../_supabase.ts'
+import type { Req, Res, LicenseRow } from '../../api/_guards.ts'
+import { requireAdmin } from '../../api/_guards.ts'
+import { getServiceClient } from '../../api/_supabase.ts'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -16,10 +16,10 @@ export default async function handler(req: Req, res: Res) {
   if (!admin) return
 
   const body = isRecord(req.body) ? req.body : {}
-  const { uid, days } = body
+  const { uid } = body
 
-  if (typeof uid !== 'string' || !uid.trim() || typeof days !== 'number' || days <= 0) {
-    res.status(400).json({ error: 'Valid uid and positive days number are required' })
+  if (typeof uid !== 'string' || !uid.trim()) {
+    res.status(400).json({ error: 'uid is required' })
     return
   }
 
@@ -38,40 +38,34 @@ export default async function handler(req: Req, res: Res) {
 
   const licenseRow = rawLicense as LicenseRow
 
-  if (licenseRow.plan === 'master' || licenseRow.plan === 'lifetime') {
-    res.status(400).json({ error: 'Cannot extend master or lifetime license' })
+  if (licenseRow.plan === 'master') {
+    res.status(400).json({ error: 'Cannot revoke master license' })
     return
   }
-
-  const currentExpiry = licenseRow.expires_at ? new Date(licenseRow.expires_at).getTime() : Date.now()
-  const baseMs = Math.max(currentExpiry, Date.now())
-  const newExpiresAt = new Date(baseMs + days * 86400000).toISOString()
 
   const { error: updateError } = await supabase
     .from('licenses')
     .update({
-      expires_at: newExpiresAt,
-      status: 'active',
+      status: 'revoked',
     })
     .eq('user_id', uid.trim())
 
   if (updateError) {
-    console.error('Failed to extend license:', updateError)
+    console.error('Failed to revoke license:', updateError)
     res.status(500).json({ ok: false, error: updateError.message })
     return
   }
 
   await supabase.from('audit_log').insert({
     actor: admin.email || 'admin',
-    action: 'license.extend',
+    action: 'license.revoke',
     subject: uid.trim(),
     detail: {
-      days,
-      previousExpiresAt: licenseRow.expires_at,
-      newExpiresAt,
+      previousStatus: licenseRow.status,
+      plan: licenseRow.plan,
     },
   })
 
-  res.status(200).json({ expiresAt: newExpiresAt })
+  res.status(200).json({ ok: true })
 }
 

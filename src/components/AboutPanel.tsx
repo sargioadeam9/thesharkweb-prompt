@@ -37,11 +37,11 @@ export default function AboutPanel({ onOpenSync }: { onOpenSync: () => void }) {
           <dl className="overflow-hidden rounded-2xl border border-line bg-surface">
             <Row label="Version" value={APP_VERSION} />
             <Row label="License" value={`${APP_LICENSE} License`} />
-            <Row label="Storage" value="This browser · Live Sync optional" />
+            <Row label="Storage" value="This browser · Live cloud sync optional" />
           </dl>
 
           <div className="rounded-2xl border border-brand/25 bg-brand-tint/25 p-4">
-            <p className="text-[13px] font-semibold text-ink">Live Sync</p>
+            <p className="text-[13px] font-semibold text-ink">Live cloud sync</p>
             <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
               Keep your prompts and tasks the same on every device. Local use stays free; Live
               Sync is an optional paid plan.
@@ -67,7 +67,7 @@ export default function AboutPanel({ onOpenSync }: { onOpenSync: () => void }) {
 
           <p className="px-1 text-[11px] leading-relaxed text-ink-muted">
             Local-first by design. Prompts stay in this browser. Nothing leaves it unless you
-            export a JSON backup, ask us to email one, or turn on Live Sync to share the library
+            export a JSON backup, ask us to email one, or turn on Live cloud sync to share the library
             across your own devices.
           </p>
         </div>

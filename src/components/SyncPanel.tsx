@@ -300,7 +300,7 @@ export default function SyncPanel() {
             </button>
             <a
               href={whatsappLink(
-                `Hi! I need help with my TheSharkWebPrompt Live Sync activation${
+                `Hi! I need help with my TheSharkWebPrompt Live cloud sync activation${
                   user?.email ? ` — ${user.email}` : ''
                 }.`,
               )}
@@ -385,7 +385,7 @@ export default function SyncPanel() {
               Removing a device is done from support.{' '}
               <a
                 href={whatsappLink(
-                  `Hi! Please remove a device from my TheSharkWebPrompt Live Sync account${
+                  `Hi! Please remove a device from my TheSharkWebPrompt Live cloud sync account${
                     user?.email ? ` — ${user.email}` : ''
                   }. The device I no longer use is: `,
                 )}

@@ -11,35 +11,35 @@ const FAQS: Faq[] = [
   {
     question: 'Is it free?',
     answer:
-      'Local use is free forever, and the code is open source under the MIT license. Live Sync is an optional paid plan for people who want the same library on several devices.',
+      'Local use is free forever, and the code is open source under the MIT license. Live cloud sync is an optional paid plan for people who want the same library on several devices.',
   },
   {
     question: 'Do I need an account?',
     answer:
-      'Not for local use. Open the app and start saving. You only sign in with Google when you want Live Sync, so the same library can follow you to other devices.',
+      'Not for local use. Open the app and start saving. You only sign in with Google when you want Live cloud sync, so the same library can follow you to other devices.',
   },
   {
     question: 'Where are my prompts stored?',
     answer:
-      'In this browser, on this device, by default. If you turn on Live Sync, a copy is also stored in our cloud so your signed-in devices can read it.',
+      'In this browser, on this device, by default. If you turn on Live cloud sync, a copy is also stored in our cloud so your signed-in devices can read it.',
   },
   {
     question: 'Can I use the same prompts on another device?',
     answer:
-      'Yes, with Live Sync. Sign in with the same Google account, press Sync now, and your prompts and tasks appear there. Without Live Sync, export a JSON backup and import it on the other device.',
+      'Yes, with Live cloud sync. Sign in with the same Google account, press Sync now, and your prompts and tasks appear there. Without Live cloud sync, export a JSON backup and import it on the other device.',
   },
   {
-    question: 'What is Live Sync?',
+    question: 'What is Live cloud sync?',
     answer:
       'An optional add-on that keeps one library across the devices you sign in on. You stay in control: it runs when you press Sync now, and it merges changes instead of overwriting them.',
   },
   {
-    question: 'How does Live Sync activation work?',
+    question: 'How does Live cloud sync activation work?',
     answer:
       'Pay with bKash or Nagad, then submit the transaction ID in the app. We check every payment by hand, so activation usually takes a few minutes. You get an email when your plan is active.',
   },
   {
-    question: 'What do the Live Sync plans include?',
+    question: 'What do the Live cloud sync plans include?',
     answer:
       'Monthly sync covers 3 devices and 500 prompts. Annual and Lifetime are unlimited. Prices and full limits are shown in the app before you pay.',
   },
@@ -49,7 +49,7 @@ const FAQS: Faq[] = [
       'Nothing is deleted. Your local library stays complete, export keeps working, and you can renew any time. We email a reminder 3 days before expiry.',
   },
   {
-    question: 'How do I remove an old device from Live Sync?',
+    question: 'How do I remove an old device from Live cloud sync?',
     answer:
       'Message support on WhatsApp with the device you no longer use. We clear it from your account so a new device can take its place.',
   },
@@ -66,7 +66,7 @@ const FAQS: Faq[] = [
   {
     question: 'What happens if I clear my browser data?',
     answer:
-      'The local copy goes with it. With Live Sync, sign in again and pull the cloud copy; otherwise import your latest backup file. Either way, the habit that saves you is a regular JSON backup.',
+      'The local copy goes with it. With Live cloud sync, sign in again and pull the cloud copy; otherwise import your latest backup file. Either way, the habit that saves you is a regular JSON backup.',
   },
   {
     question: 'I deleted a prompt by mistake. Can I get it back?',
@@ -91,7 +91,7 @@ const FAQS: Faq[] = [
   {
     question: 'Do you see or collect my prompts?',
     answer:
-      'Local use is private: there is no tracking, no ads, and nothing is uploaded. With Live Sync the synced copy is stored on our servers and our team can read it, so do not sync secrets. We never see your bKash or Nagad credentials, only the transaction ID you type in.',
+      'Local use is private: there is no tracking, no ads, and nothing is uploaded. With Live cloud sync the synced copy is stored on our servers and our team can read it, so do not sync secrets. We never see your bKash or Nagad credentials, only the transaction ID you type in.',
   },
 ]
 

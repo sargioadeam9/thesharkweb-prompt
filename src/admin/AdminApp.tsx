@@ -140,6 +140,8 @@ export default function AdminApp() {
   }
 
   async function handleRevoke(uid: string) {
+    if (!window.confirm('Revoke this license? The owner will lose access immediately.')) return
+
     const ok = await run(`${uid}:revoke`, () => adminRevoke(uid))
     if (!ok) return
     toast.success('License revoked')
@@ -147,18 +149,17 @@ export default function AdminApp() {
   }
 
   async function handleResetDevices(uid: string) {
+    if (!window.confirm('Clear every device for this license? They will need to sign in again.')) {
+      return
+    }
+
     const ok = await run(`${uid}:devices`, () => adminResetDevices(uid))
     if (!ok) return
     toast.success('Device list cleared')
     reloadLicenses()
   }
 
-  async function openVersions(uid: string) {
-    if (versionsFor === uid) {
-      setVersionsFor(null)
-      return
-    }
-
+  async function loadVersions(uid: string) {
     const result = await adminBlobVersions(uid)
     if (!result.ok) {
       toast.error(result.error)
@@ -169,11 +170,20 @@ export default function AdminApp() {
     setVersions(result.data.versions)
   }
 
+  async function openVersions(uid: string) {
+    if (versionsFor === uid) {
+      setVersionsFor(null)
+      return
+    }
+
+    await loadVersions(uid)
+  }
+
   async function handleRestore(uid: string, version: number) {
     const ok = await run(`${uid}:restore:${version}`, () => adminRestoreBlob(uid, version))
     if (!ok) return
     toast.success(`Restored version ${version}`)
-    await openVersions(uid)
+    await loadVersions(uid)
   }
 
   if (loading) {
@@ -388,21 +398,24 @@ export default function AdminApp() {
                           <button
                             type="button"
                             onClick={() => void handleExtend(row.uid, 30)}
-                            className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-ink"
+                            disabled={busy === `${row.uid}:30`}
+                            className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
                           >
                             +30
                           </button>
                           <button
                             type="button"
                             onClick={() => void handleExtend(row.uid, 365)}
-                            className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-ink"
+                            disabled={busy === `${row.uid}:365`}
+                            className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
                           >
                             +365
                           </button>
                           <button
                             type="button"
                             onClick={() => void handleRevoke(row.uid)}
-                            className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-danger"
+                            disabled={busy === `${row.uid}:revoke`}
+                            className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-danger disabled:opacity-50"
                           >
                             Revoke
                           </button>
@@ -411,7 +424,8 @@ export default function AdminApp() {
                       <button
                         type="button"
                         onClick={() => void handleResetDevices(row.uid)}
-                        className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-ink"
+                        disabled={busy === `${row.uid}:devices`}
+                        className="h-8 rounded-lg border border-line px-2 text-[11px] font-medium text-ink-muted hover:text-ink disabled:opacity-50"
                       >
                         Reset devices
                       </button>

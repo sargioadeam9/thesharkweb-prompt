@@ -375,7 +375,7 @@ function App() {
 
           <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">
             {activeView === 'about' ? (
-              <AboutPanel />
+              <AboutPanel onOpenSync={() => changeView('sync')} />
             ) : activeView === 'faq' ? (
               <FaqPanel />
             ) : activeView === 'todos' ? (

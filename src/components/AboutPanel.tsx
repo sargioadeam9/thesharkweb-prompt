@@ -27,7 +27,7 @@ function Shortcut({ label, keys }: { label: string; keys: string }) {
   )
 }
 
-export default function AboutPanel() {
+export default function AboutPanel({ onOpenSync }: { onOpenSync: () => void }) {
   return (
     <div className="flex flex-1 items-center justify-center px-5 py-10 lg:px-8 lg:py-12">
       <div className="grid w-full max-w-[820px] gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-center lg:gap-10">
@@ -39,6 +39,21 @@ export default function AboutPanel() {
             <Row label="License" value={`${APP_LICENSE} License`} />
             <Row label="Storage" value="This browser · Live Sync optional" />
           </dl>
+
+          <div className="rounded-2xl border border-brand/25 bg-brand-tint/25 p-4">
+            <p className="text-[13px] font-semibold text-ink">Live Sync</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+              Keep your prompts and tasks the same on every device. Local use stays free; Live
+              Sync is an optional paid plan.
+            </p>
+            <button
+              type="button"
+              onClick={onOpenSync}
+              className="mt-3 inline-flex h-9 items-center rounded-lg bg-brand px-3.5 text-[12px] font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              View plans
+            </button>
+          </div>
 
           <div className="rounded-2xl border border-line bg-surface p-4">
             <p className="text-[11px] font-medium tracking-[0.06em] text-ink-faint">Shortcuts</p>

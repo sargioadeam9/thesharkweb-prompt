@@ -432,6 +432,21 @@ Do not touch UI (P7). Reply with the counts and stop.
 
 ---
 
+## Server build — read before touching API code
+
+The API is precompiled, because Vercel's own TypeScript handling failed for any route that imports
+another module, and Vercel also collects `api/` before the build command runs.
+
+- **Sources live in `server/routes/*.ts`** (and shared helpers in `server/*.ts`). Never edit
+  `api/*.js` by hand and never add a `.ts` file under `api/` — it would become a second function.
+- After changing anything under `server/`, run `npm run build:api` and **commit the regenerated
+  `api/*.js`**; otherwise the deployed route 404s.
+- `npm run build` runs `build:api` first, then the client build.
+- The Hobby plan allows **12 serverless functions per deployment**. Today's count is 6:
+  `email-backup`, `plans`, `license`, `sync`, `payments/request`, `admin/[action]`.
+
+---
+
 ## Reset Prompt (paste if the agent drifts)
 
 ```

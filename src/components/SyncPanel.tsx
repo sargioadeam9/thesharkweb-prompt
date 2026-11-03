@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Clock, Cloud, LogOut, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
+import { Check, Clock, Cloud, LogOut, MessageCircle, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchPlans } from '../lib/api-client'
 import { refreshLicense, useLicense } from '../lib/license-store'
@@ -8,6 +8,12 @@ import { getSyncStatus, syncNow } from '../lib/sync'
 import type { Plan, PaymentDestinations } from '../lib/sync-types'
 import PaymentForm from './PaymentForm'
 import { TERMS_TEXT } from '../lib/legal'
+
+const SUPPORT_WHATSAPP = '8801896444400'
+
+function whatsappLink(message: string): string {
+  return `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(message)}`
+}
 
 function formatDate(value: string | null): string {
   if (!value) return ''
@@ -280,16 +286,32 @@ export default function SyncPanel() {
             We received your request. Activation usually takes a few minutes.
           </p>
           <p className="mt-1.5 text-[12px] leading-relaxed text-ink-muted">
-            We check every payment by hand.
+            We check every payment by hand. Need it faster? Message us for instant 24/7 live
+            support.
           </p>
-          <button
-            type="button"
-            onClick={() => void refreshLicense()}
-            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-medium text-ink transition-colors hover:border-ink-faint/50 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
-            Check again
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void refreshLicense()}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-medium text-ink transition-colors hover:border-ink-faint/50 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              <RefreshCw className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
+              Check again
+            </button>
+            <a
+              href={whatsappLink(
+                `Hi! I need help with my TheSharkWebPrompt Live Sync activation${
+                  user?.email ? ` — ${user.email}` : ''
+                }.`,
+              )}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#25D366] px-3 text-[12px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              <MessageCircle className="size-3.5" strokeWidth={2} aria-hidden="true" />
+              WhatsApp support · 24/7
+            </a>
+          </div>
         </SectionCard>
       ) : null}
 
@@ -360,7 +382,20 @@ export default function SyncPanel() {
               <p className="mt-1.5 text-[12px] text-ink-muted">No devices have synced yet.</p>
             )}
             <p className="mt-2 text-[11px] text-ink-faint">
-              Removing a device is done from support. Message us with the device you no longer use.
+              Removing a device is done from support.{' '}
+              <a
+                href={whatsappLink(
+                  `Hi! Please remove a device from my TheSharkWebPrompt Live Sync account${
+                    user?.email ? ` — ${user.email}` : ''
+                  }. The device I no longer use is: `,
+                )}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-brand-deep underline underline-offset-2 hover:no-underline"
+              >
+                Message us on WhatsApp
+              </a>{' '}
+              with the device you no longer use.
             </p>
           </SectionCard>
         </div>

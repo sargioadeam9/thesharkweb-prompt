@@ -159,7 +159,7 @@ export default function Sidebar({
           <NavButton
             active={view === 'sync'}
             icon={RefreshCw}
-            label="Sync"
+            label="Live Sync"
             onClick={() => onSelect('sync')}
           />
           <NavButton

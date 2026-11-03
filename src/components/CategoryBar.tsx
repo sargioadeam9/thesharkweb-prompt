@@ -90,7 +90,7 @@ export default function CategoryBar({
       <button
         type="button"
         onClick={() => onSelect('sync')}
-        aria-label="Sync"
+        aria-label="Live Sync"
         aria-current={view === 'sync' ? 'page' : undefined}
         className={
           view === 'sync'

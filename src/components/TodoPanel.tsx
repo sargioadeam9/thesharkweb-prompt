@@ -116,10 +116,10 @@ function Stat({
 }
 
 export default function TodoPanel({ todos }: { todos: Todo[] }) {
-  const [title, setTitle] = useState('')
-  const [dueDate, setDueDate] = useState('')
-  const [filter, setFilter] = useState<TodoFilter>('all')
   const [today] = useState(() => localDayKey(new Date()))
+  const [title, setTitle] = useState('')
+  const [dueDate, setDueDate] = useState(today)
+  const [filter, setFilter] = useState<TodoFilter>('all')
   const boxRef = useRef<HTMLTextAreaElement>(null)
 
   const sorted = useMemo(
@@ -161,7 +161,7 @@ export default function TodoPanel({ todos }: { todos: Todo[] }) {
     try {
       await repo.createTodo({ title, dueDate: dueDate || undefined })
       setTitle('')
-      setDueDate('')
+      setDueDate(today)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not add this task')
     }

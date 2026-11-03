@@ -6,26 +6,57 @@ const FAQS: Faq[] = [
   {
     question: 'What is TheSharkWebPrompt?',
     answer:
-      'A simple place to keep the AI prompts you use often. You save a prompt once and copy it whenever you need it again.',
+      'A private library for the AI prompts you use often. Save a prompt once, organise it with categories and tags, and copy it whenever you need it. It works offline in your browser.',
+  },
+  {
+    question: 'Is it free?',
+    answer:
+      'Local use is free forever, and the code is open source under the MIT license. Live Sync is an optional paid plan for people who want the same library on several devices.',
   },
   {
     question: 'Do I need an account?',
-    answer: 'No. There is no sign up, no email and no password. Open the app and start saving.',
+    answer:
+      'Not for local use. Open the app and start saving. You only sign in with Google when you want Live Sync, so the same library can follow you to other devices.',
   },
   {
     question: 'Where are my prompts stored?',
     answer:
-      'Inside this browser, on this device. Nothing is uploaded and there is no server behind the app.',
+      'In this browser, on this device, by default. If you turn on Live Sync, a copy is also stored in our cloud so your signed-in devices can read it.',
   },
   {
-    question: 'Can I see my prompts on another device?',
+    question: 'Can I use the same prompts on another device?',
     answer:
-      'Not right now. Each browser keeps its own copy. To move them, export a backup file and import it on the other device.',
+      'Yes, with Live Sync. Sign in with the same Google account, press Sync now, and your prompts and tasks appear there. Without Live Sync, export a JSON backup and import it on the other device.',
+  },
+  {
+    question: 'What is Live Sync?',
+    answer:
+      'An optional add-on that keeps one library across the devices you sign in on. You stay in control: it runs when you press Sync now, and it merges changes instead of overwriting them.',
+  },
+  {
+    question: 'How does Live Sync activation work?',
+    answer:
+      'Pay with bKash or Nagad, then submit the transaction ID in the app. We check every payment by hand, so activation usually takes a few minutes. You get an email when your plan is active.',
+  },
+  {
+    question: 'What do the Live Sync plans include?',
+    answer:
+      'Monthly sync covers 3 devices and 500 prompts. Annual and Lifetime are unlimited. Prices and full limits are shown in the app before you pay.',
+  },
+  {
+    question: 'What happens when my sync plan ends?',
+    answer:
+      'Nothing is deleted. Your local library stays complete, export keeps working, and you can renew any time. We email a reminder 3 days before expiry.',
+  },
+  {
+    question: 'How do I remove an old device from Live Sync?',
+    answer:
+      'Message support on WhatsApp with the device you no longer use. We clear it from your account so a new device can take its place.',
   },
   {
     question: 'How do I back up my prompts?',
     answer:
-      'Open Backup and data, then press Download JSON backup. Keep the file somewhere safe like Google Drive or Dropbox. You can also have the file emailed to you from the same screen.',
+      'Open Backup and data, then press Download JSON backup. Keep the file somewhere safe like Google Drive or Dropbox. You can also have the file emailed to you from the same screen. A JSON backup works even if a sync plan ends.',
   },
   {
     question: 'How do I restore a backup?',
@@ -35,7 +66,7 @@ const FAQS: Faq[] = [
   {
     question: 'What happens if I clear my browser data?',
     answer:
-      'Everything goes with it. That is why the app asks you to back up. A backup file is the only copy that can survive a browser clean up.',
+      'The local copy goes with it. With Live Sync, sign in again and pull the cloud copy; otherwise import your latest backup file. Either way, the habit that saves you is a regular JSON backup.',
   },
   {
     question: 'I deleted a prompt by mistake. Can I get it back?',
@@ -60,11 +91,7 @@ const FAQS: Faq[] = [
   {
     question: 'Do you see or collect my prompts?',
     answer:
-      'No. Your prompts stay in this browser and there is no tracking. If you ask us to email you a backup, that file is passed to our email provider, sent to you, and then dropped. We keep your email address if you give it, and we never keep your prompts.',
-  },
-  {
-    question: 'Is it free?',
-    answer: 'Yes. It is free to use and the code is open source under the MIT license.',
+      'Local use is private: there is no tracking, no ads, and nothing is uploaded. With Live Sync the synced copy is stored on our servers and our team can read it, so do not sync secrets. We never see your bKash or Nagad credentials, only the transaction ID you type in.',
   },
 ]
 
@@ -98,9 +125,9 @@ export default function FaqPanel() {
         ))}
       </div>
 
-      <div className="mt-7 flex justify-center">
+      <div className="mt-7 flex flex-col items-center gap-3">
         <a
-          href="https://www.thesharkweb.com"
+          href="https://sharkweb-main-2026-frontend.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
           className="faq-cta inline-flex h-10 items-center gap-2 rounded-full bg-brand px-4 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -114,6 +141,21 @@ export default function FaqPanel() {
           />
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
+
+        <p className="text-center text-[11px] text-ink-faint">
+          Or message us on{' '}
+          <a
+            href={`https://wa.me/8801896444400?text=${encodeURIComponent(
+              'Hi! I have a question about TheSharkWebPrompt.',
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-brand-deep underline underline-offset-2 hover:no-underline"
+          >
+            WhatsApp
+          </a>{' '}
+          for instant 24/7 support.
+        </p>
       </div>
     </div>
   )

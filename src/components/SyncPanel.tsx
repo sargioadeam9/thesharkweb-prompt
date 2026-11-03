@@ -200,7 +200,7 @@ export default function SyncPanel() {
 
   const header = (
     <div className="mb-5">
-      <h2 className="text-[20px] font-semibold tracking-[-0.025em]">Live Sync</h2>
+      <h2 className="text-[20px] font-semibold tracking-[-0.025em]">Live cloud sync</h2>
       <p className="mt-1 text-[13px] text-ink-muted">
         Keep this library the same on every device. Local use stays free and complete without it.
       </p>

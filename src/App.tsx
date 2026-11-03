@@ -212,7 +212,7 @@ function App() {
         : activeView === 'todos'
           ? 'To Do'
           : activeView === 'sync'
-            ? 'Live Sync'
+            ? 'Live cloud sync'
             : activeView === 'about'
               ? 'About'
               : activeView === 'faq'

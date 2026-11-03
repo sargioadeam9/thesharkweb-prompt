@@ -264,6 +264,68 @@ one-line reason, then stop.
 
 ---
 
+## Phase 8 — correctness fixes (paste after the Phase 7 report)
+
+Do not re-run the acceptance table until every fix below is in place. The Phase 7 report claimed
+PASS on criteria 5, 6, 7, 12 that the code does not actually satisfy.
+
+```
+PHASE 8 — correctness fixes. Read only: this prompt and the named files. Do not touch UI (P7).
+
+F1  src/lib/repo.ts — add `exportSyncPayload(): Promise<BackupFile>` that is identical to
+    exportBackup({stamp:false}) EXCEPT it keeps records that have deletedAt (and keeps the field).
+    exportBackup stays tombstone-free for user backups.
+    In src/lib/sync.ts, push exportSyncPayload() instead of exportBackup(). Without this, deletions
+    never reach the server.
+
+F2  src/lib/repo.ts — add `mergeFromRemote(payload: unknown): Promise<{ added: number; updated: number }>`:
+      - validate with parseBackup
+      - for each remote prompt/category/todo: if no local row with that id -> add it
+      - if a local row exists -> compare updatedAt; remote newer wins, else keep local
+      - if the remote row has deletedAt and is newer -> apply it locally as a tombstone
+      - if the local row is a tombstone older than the remote live row -> revive it
+      - NEVER generate a new id for an existing id (that is the duplicate bug)
+    In src/lib/sync.ts, replace both `importBackup(payload, 'merge')` calls with mergeFromRemote().
+    Leave importBackup untouched for the user-facing JSON import.
+
+F3  api/sync.ts — the CAS update must detect 0 affected rows:
+    .update({...}).eq('user_id', …).eq('version', baseVersion).select('version')
+    If the returned array is empty -> 409 { version: current.version, payload: current.payload }.
+    Today a stale push returns 200 even though nothing was written (criterion 7 was not real).
+
+F4  api/license.ts — `effectiveStatus` must not echo the raw row status:
+    active -> 'active'; revoked -> 'revoked'; otherwise -> 'expired'.
+    Today an expired-by-date row with status='active' reports 'active'.
+
+F5  api/sync.ts — device cap must be checked BEFORE the upsert:
+    count devices; if deviceId is new AND count >= maxDevices -> 409 device_limit_reached, no insert.
+    Today a rejected 4th device still occupies a slot.
+
+F6  api/payments/request.ts and api/admin/approve.ts — replace every `.ilike('txn_id', value)` with
+    an exact, escaped comparison (`.eq('txn_id', value)` against the normalized value you store).
+    ILIKE treats % and _ in user input as wildcards, so "AB%" today matches any txn.
+
+F7  src/lib/supabase.ts — never call createClient with empty strings. If VITE_SUPABASE_URL or
+    VITE_SUPABASE_ANON_KEY is missing, export `supabase = null` and have every helper throw a clear
+    'Sync is not configured' error. main.tsx imports this chain at startup, so today a missing env
+    var white-screens the whole app for users who never asked for sync.
+
+F8  api/_guards.ts — licenseState must not fall back to hardcoded 3 / 500 / 2097152. If PLANS_JSON is
+    missing or the plan is unknown: active:false + one audit_log row, no silent defaults.
+
+F9  api/license.ts + src/lib/sync.ts — implement the 'pending' status properly: GET /api/license also
+    returns `pendingRequest: boolean` (any payment_requests row with status='pending' for the user),
+    and getSyncStatus() returns 'pending' when it is true and there is no active license.
+
+F10 Run `npm run build && npm run lint`, then re-run the §9 backend table (1–14) and this time give
+    per-criterion evidence: the command, the status code, and for 5/6/7 the actual before/after row
+    counts from IndexedDB or the DB. Any criterion you cannot prove stays FAIL.
+
+Reply with a fix-by-fix table (F1–F10: done / not done), the new verification output, and stop.
+```
+
+---
+
 ## Reset Prompt (paste if the agent drifts)
 
 ```

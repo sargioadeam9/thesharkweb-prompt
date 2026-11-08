@@ -168,7 +168,7 @@ export default function StoragePanel() {
                 aria-label={`Open ${folder.name}`}
                 className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand"
               />
-              <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="pointer-events-none relative z-10 flex items-start justify-between gap-3">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-canvas">
                   <FolderOpen className="size-4 text-brand-deep" strokeWidth={1.75} aria-hidden="true" />
                 </span>
@@ -176,13 +176,13 @@ export default function StoragePanel() {
                   type="button"
                   onClick={() => void handleDelete(folder)}
                   aria-label={`Delete ${folder.name}`}
-                  className="relative z-20 grid size-8 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="pointer-events-auto relative z-20 grid size-8 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   <Trash2 className="size-4" strokeWidth={1.75} aria-hidden="true" />
                 </button>
               </div>
-              <h3 className="relative z-10 mt-3 line-clamp-2 text-[14px] font-semibold">{folder.name}</h3>
-              <p className="relative z-10 mt-1 truncate text-[12px] text-ink-muted">{hostname(folder.url)}</p>
+              <h3 className="pointer-events-none relative z-10 mt-3 line-clamp-2 text-[14px] font-semibold">{folder.name}</h3>
+              <p className="pointer-events-none relative z-10 mt-1 truncate text-[12px] text-ink-muted">{hostname(folder.url)}</p>
             </article>
           ))}
         </div>

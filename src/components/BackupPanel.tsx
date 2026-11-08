@@ -10,6 +10,7 @@ type Props = {
   promptCount: number
   categoryCount: number
   todoCount: number
+  folderCount: number
   lastBackupAt?: string
   onClose: () => void
 }
@@ -28,6 +29,7 @@ export default function BackupPanel({
   promptCount,
   categoryCount,
   todoCount,
+  folderCount,
   lastBackupAt,
   onClose,
 }: Props) {
@@ -51,7 +53,7 @@ export default function BackupPanel({
   const mathOk = answer.trim() !== '' && Number(answer.trim()) === challenge.a + challenge.b
   const wordOk = word.trim().toLowerCase() === 'reset'
   const resetReady = mathOk && wordOk
-  const hasPromptData = promptCount > 0 || todoCount > 0
+  const hasPromptData = promptCount > 0 || todoCount > 0 || folderCount > 0
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -158,8 +160,8 @@ export default function BackupPanel({
       }
       toast.success(
         mode === 'replace'
-          ? `Library replaced with ${result.prompts} prompt${result.prompts === 1 ? '' : 's'} and ${result.todos} task${result.todos === 1 ? '' : 's'}`
-          : `Merged ${result.prompts} prompt${result.prompts === 1 ? '' : 's'} and ${result.todos} task${result.todos === 1 ? '' : 's'}`,
+          ? `Library replaced with ${result.prompts} prompt${result.prompts === 1 ? '' : 's'}, ${result.todos} task${result.todos === 1 ? '' : 's'} and ${result.folders} folder${result.folders === 1 ? '' : 's'}`
+          : `Merged ${result.prompts} prompt${result.prompts === 1 ? '' : 's'}, ${result.todos} task${result.todos === 1 ? '' : 's'} and ${result.folders} folder${result.folders === 1 ? '' : 's'}`,
       )
       setPreview(null)
       if (fileRef.current) fileRef.current.value = ''
@@ -229,7 +231,8 @@ export default function BackupPanel({
             <h3 className="text-[13px] font-semibold text-ink">Export</h3>
             <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
               {promptCount} prompt{promptCount === 1 ? '' : 's'} in {categoryCount} categories,{' '}
-              {todoCount} task{todoCount === 1 ? '' : 's'} in To Do. Last backup:{' '}
+              {todoCount} task{todoCount === 1 ? '' : 's'} in To Do, {folderCount} folder
+              {folderCount === 1 ? '' : 's'} in Storage. Last backup:{' '}
               {formatDate(lastBackupAt)}. Everything lives in this browser, so a JSON file is your
               only safety net.
             </p>
@@ -350,6 +353,12 @@ export default function BackupPanel({
                     <dt className="text-ink-muted">Tasks</dt>
                     <dd className="text-[13px] font-semibold tabular-nums text-ink">
                       {preview.todos?.length ?? 0}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-muted">Folders</dt>
+                    <dd className="text-[13px] font-semibold tabular-nums text-ink">
+                      {preview.storageFolders?.length ?? 0}
                     </dd>
                   </div>
                   <div>

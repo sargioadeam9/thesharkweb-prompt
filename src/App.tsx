@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -15,6 +15,7 @@ import Header from './components/Header'
 import PromptCard from './components/PromptCard'
 import PromptModal from './components/PromptModal'
 import Sidebar, { type View } from './components/Sidebar'
+import StoragePanel from './components/StoragePanel'
 import SyncPanel from './components/SyncPanel'
 import TodoPanel from './components/TodoPanel'
 import { APP_VERSION } from './lib/app-info'
@@ -81,6 +82,9 @@ function App() {
   const [showBackup, setShowBackup] = useState(false)
   const [reminderHidden, setReminderHidden] = useState(false)
 
+  // The keydown listener below has empty deps so it always reads the current view through this ref.
+  const activeViewRef = useRef<View>(null)
+
   useEffect(() => {
     ensureSeeded().catch((error: unknown) => {
       console.error('Failed to open the prompt database', error)
@@ -115,7 +119,7 @@ function App() {
       }
       if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return
 
-      if (event.key === 'n' || event.key === 'N') {
+      if ((event.key === 'n' || event.key === 'N') && activeViewRef.current !== 'storage') {
         event.preventDefault()
         setModal({ mode: 'create' })
       } else if (event.key === 't' || event.key === 'T') {
@@ -132,17 +136,18 @@ function App() {
   }, [])
 
   const data = useLiveQuery(async () => {
-    const [prompts, categories, todos, settings] = await Promise.all([
+    const [prompts, categories, todos, storageFolders, settings] = await Promise.all([
       repo.listPrompts(),
       repo.listCategories(),
       repo.listTodos(),
+      repo.listStorageFolders(),
       repo.getSettings(),
     ])
     const lastBackupDay = settings.lastBackupAt
       ? localDayKey(new Date(settings.lastBackupAt))
       : null
 
-    return { prompts, categories, todos, settings, lastBackupDay }
+    return { prompts, categories, todos, storageFolders, settings, lastBackupDay }
   }, [])
 
   const prompts = useMemo(() => data?.prompts ?? [], [data])
@@ -155,12 +160,17 @@ function App() {
     view &&
     view !== 'favorites' &&
     view !== 'todos' &&
+    view !== 'storage' &&
     view !== 'sync' &&
     view !== 'about' &&
     view !== 'faq' &&
     !categories.some((category) => category.id === view)
       ? null
       : view
+
+  useEffect(() => {
+    activeViewRef.current = activeView
+  }, [activeView])
 
   const counts = useMemo(() => {
     const map: Record<string, number> = {}
@@ -211,13 +221,15 @@ function App() {
         ? 'Favorites'
         : activeView === 'todos'
           ? 'To Do'
-          : activeView === 'sync'
-            ? 'Live cloud sync'
-            : activeView === 'about'
-              ? 'About'
-              : activeView === 'faq'
-                ? 'FAQ'
-                : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
+          : activeView === 'storage'
+            ? 'Storage'
+            : activeView === 'sync'
+              ? 'Live cloud sync'
+              : activeView === 'about'
+                ? 'About'
+                : activeView === 'faq'
+                  ? 'FAQ'
+                  : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
 
   const sortValue = `${settings?.sortBy ?? 'updatedAt'}-${settings?.sortDirection ?? 'desc'}`
 
@@ -357,9 +369,12 @@ function App() {
               activeView !== 'about' &&
               activeView !== 'faq' &&
               activeView !== 'todos' &&
+              activeView !== 'storage' &&
               activeView !== 'sync'
             }
-            showNew={activeView !== 'todos' && activeView !== 'sync'}
+            showNew={
+              activeView !== 'todos' && activeView !== 'storage' && activeView !== 'sync'
+            }
           />
           <CategoryBar
             categories={categories}
@@ -384,6 +399,8 @@ function App() {
               <FaqPanel />
             ) : activeView === 'todos' ? (
               <TodoPanel todos={todos} />
+            ) : activeView === 'storage' ? (
+              <StoragePanel />
             ) : activeView === 'sync' ? (
               <SyncPanel />
             ) : (
@@ -481,6 +498,7 @@ function App() {
           promptCount={prompts.length}
           categoryCount={categories.length}
           todoCount={todos.length}
+          folderCount={data?.storageFolders.length ?? 0}
           lastBackupAt={settings?.lastBackupAt}
           onClose={() => setShowBackup(false)}
         />

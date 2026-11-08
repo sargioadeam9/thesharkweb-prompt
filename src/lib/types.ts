@@ -35,6 +35,15 @@ export interface Category {
   updatedAt: string
 }
 
+export interface StorageFolder {
+  id: string
+  name: string
+  url: string
+  deletedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Settings {
   id: 'app'
   schemaVersion: 1
@@ -58,6 +67,8 @@ export interface BackupFile {
   categories: Category[]
   /** Optional so files exported before the To Do tab still import. */
   todos?: Todo[]
+  /** Optional so files exported before the Storage tab still import. */
+  storageFolders?: StorageFolder[]
   settings: {
     sortBy: SortField
     sortDirection: SortDirection
@@ -79,6 +90,11 @@ export type TodoInput = {
   dueDate?: string
 }
 
+export type StorageFolderInput = {
+  name: string
+  url: string
+}
+
 export type TodoFilter = 'all' | 'open' | 'done'
 
 export type ImportMode = 'merge' | 'replace'
@@ -88,5 +104,5 @@ export type CategoryDeleteOptions =
   | { mode: 'move'; targetId: string }
 
 export type ImportResult =
-  | { ok: true; prompts: number; categories: number; todos: number }
+  | { ok: true; prompts: number; categories: number; todos: number; folders: number }
   | { ok: false; error: string }

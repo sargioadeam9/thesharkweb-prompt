@@ -11,6 +11,8 @@ import type {
   Settings,
   SortDirection,
   SortField,
+  StorageFolder,
+  StorageFolderInput,
   Todo,
   TodoInput,
 } from './types.ts'
@@ -339,13 +341,70 @@ export async function updateSettings(patch: Partial<Settings>): Promise<Settings
   return next
 }
 
+/* ------------------------------ storage folders ------------------------------ */
+
+function normalizeFolderUrl(value: unknown): string {
+  if (typeof value !== 'string') throw new Error('Folder link must be text')
+  let raw = value.trim()
+  if (!raw) throw new Error('Folder link is required')
+  if (raw.length > 2000) throw new Error('Folder link is too long')
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = `https://${raw}`
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    throw new Error('That does not look like a link')
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Only http and https links are allowed')
+  }
+  return parsed.toString()
+}
+
+export async function listStorageFolders(): Promise<StorageFolder[]> {
+  return db.storageFolders.filter((folder) => !folder.deletedAt).toArray()
+}
+
+export async function createStorageFolder(input: StorageFolderInput): Promise<StorageFolder> {
+  const name = requireText(input.name, 'Folder name', 120)
+  const url = normalizeFolderUrl(input.url)
+  const timestamp = nowIso()
+
+  const folder: StorageFolder = {
+    id: uid(),
+    name,
+    url,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+
+  await db.storageFolders.add(folder)
+  return folder
+}
+
+export async function deleteStorageFolder(id: string): Promise<void> {
+  const existing = await db.storageFolders.get(id)
+  if (!existing) return
+  const timestamp = nowIso()
+  await db.storageFolders.put({ ...existing, deletedAt: timestamp, updatedAt: timestamp })
+}
+
+/** Puts a deleted folder back, id and timestamps included, for the undo toast. */
+export async function restoreStorageFolder(folder: StorageFolder): Promise<void> {
+  const timestamp = nowIso()
+  const next: StorageFolder = { ...folder, updatedAt: timestamp }
+  delete next.deletedAt
+  await db.storageFolders.put(next)
+}
+
 /* ------------------------------ backup / import ----------------------------- */
 
 export async function exportBackup(options: { stamp?: boolean } = {}): Promise<BackupFile> {
-  const [rawPrompts, rawCategories, rawTodos, settings] = await Promise.all([
+  const [rawPrompts, rawCategories, rawTodos, rawStorageFolders, settings] = await Promise.all([
     db.prompts.filter((p) => !p.deletedAt).toArray(),
     db.categories.filter((c) => !c.deletedAt).toArray(),
     db.todos.filter((t) => !t.deletedAt).toArray(),
+    db.storageFolders.filter((f) => !f.deletedAt).toArray(),
     getSettings(),
   ])
 
@@ -364,6 +423,11 @@ export async function exportBackup(options: { stamp?: boolean } = {}): Promise<B
     delete copy.deletedAt
     return copy
   })
+  const storageFolders: StorageFolder[] = rawStorageFolders.map((f) => {
+    const copy = { ...f }
+    delete copy.deletedAt
+    return copy
+  })
 
   const exportedAt = nowIso()
   const stamp = options.stamp ?? true
@@ -376,6 +440,7 @@ export async function exportBackup(options: { stamp?: boolean } = {}): Promise<B
     prompts,
     categories,
     todos,
+    storageFolders,
     settings: {
       sortBy: settings.sortBy,
       sortDirection: settings.sortDirection,
@@ -390,10 +455,11 @@ export async function exportBackup(options: { stamp?: boolean } = {}): Promise<B
  * records that have deletedAt (and preserves the deletedAt field) so deletes reach the server.
  */
 export async function exportSyncPayload(): Promise<BackupFile> {
-  const [prompts, categories, todos, settings] = await Promise.all([
+  const [prompts, categories, todos, storageFolders, settings] = await Promise.all([
     db.prompts.toArray(),
     db.categories.toArray(),
     db.todos.toArray(),
+    db.storageFolders.toArray(),
     getSettings(),
   ])
 
@@ -406,6 +472,7 @@ export async function exportSyncPayload(): Promise<BackupFile> {
     prompts,
     categories,
     todos,
+    storageFolders,
     settings: {
       sortBy: settings.sortBy,
       sortDirection: settings.sortDirection,
@@ -424,6 +491,28 @@ function requireIsoDate(value: unknown, field: string): string {
     throw new Error(`${field} must be a valid date`)
   }
   return value
+}
+
+/** Older files have no `storageFolders` key, which is treated as an empty list. */
+function parseStorageFolders(raw: unknown): StorageFolder[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) throw new Error('Invalid backup: storageFolders must be an array')
+
+  return raw.map((entry, index) => {
+    if (!isRecord(entry)) throw new Error(`Invalid folder at position ${index + 1}`)
+
+    return {
+      id: requireText(entry.id, `Folder ${index + 1} id`, 200),
+      name: requireText(entry.name, `Folder ${index + 1} name`, 120),
+      url: normalizeFolderUrl(entry.url),
+      deletedAt:
+        typeof entry.deletedAt === 'string'
+          ? requireIsoDate(entry.deletedAt, `Folder ${index + 1} deletedAt`)
+          : undefined,
+      createdAt: requireIsoDate(entry.createdAt, `Folder ${index + 1} createdAt`),
+      updatedAt: requireIsoDate(entry.updatedAt, `Folder ${index + 1} updatedAt`),
+    }
+  })
 }
 
 /** Older files have no `todos` key, which is treated as an empty list. */
@@ -506,6 +595,7 @@ export function parseBackup(raw: unknown): BackupFile {
   })
 
   const todos = parseTodos(raw.todos)
+  const storageFolders = parseStorageFolders(raw.storageFolders)
 
   const settings = isRecord(raw.settings) ? raw.settings : {}
   const sortBy = SORT_FIELDS.includes(settings.sortBy as SortField)
@@ -522,6 +612,7 @@ export function parseBackup(raw: unknown): BackupFile {
     prompts,
     categories,
     todos,
+    storageFolders,
     settings: {
       sortBy,
       sortDirection,
@@ -544,14 +635,16 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
   }
 
   try {
-    await db.transaction('rw', db.prompts, db.categories, db.settings, db.todos, async () => {
+    await db.transaction('rw', db.prompts, db.categories, db.settings, db.todos, db.storageFolders, async () => {
       if (mode === 'replace') {
         await db.prompts.clear()
         await db.categories.clear()
         await db.todos.clear()
+        await db.storageFolders.clear()
         await db.categories.bulkAdd(backup.categories)
         await db.prompts.bulkAdd(backup.prompts)
         if (backup.todos?.length) await db.todos.bulkAdd(backup.todos)
+        if (backup.storageFolders?.length) await db.storageFolders.bulkAdd(backup.storageFolders)
       } else {
         const idMap = new Map<string, string>()
         const existingCategories = await db.categories.toArray()
@@ -595,6 +688,17 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
         })
 
         if (todosToAdd.length) await db.todos.bulkAdd(todosToAdd)
+
+        const existingFolderIds = new Set(
+          (await db.storageFolders.toArray()).map((folder) => folder.id),
+        )
+        const foldersToAdd = (backup.storageFolders ?? []).map((folder) => {
+          const id = existingFolderIds.has(folder.id) ? uid() : folder.id
+          existingFolderIds.add(id)
+          return { ...folder, id }
+        })
+
+        if (foldersToAdd.length) await db.storageFolders.bulkAdd(foldersToAdd)
       }
 
       const current = (await db.settings.get('app')) ?? defaultSettings()
@@ -619,6 +723,7 @@ export async function importBackup(raw: unknown, mode: ImportMode): Promise<Impo
     prompts: backup.prompts.length,
     categories: backup.categories.length,
     todos: backup.todos?.length ?? 0,
+    folders: backup.storageFolders?.length ?? 0,
   }
 }
 
@@ -634,7 +739,7 @@ export async function mergeFromRemote(
   let added = 0
   let updated = 0
 
-  await db.transaction('rw', db.prompts, db.categories, db.todos, db.settings, async () => {
+  await db.transaction('rw', db.prompts, db.categories, db.todos, db.storageFolders, db.settings, async () => {
     // 1. Categories
     const localCategories = new Map(
       (await db.categories.toArray()).map((cat) => [cat.id, cat]),
@@ -700,6 +805,28 @@ export async function mergeFromRemote(
         }
       }
     }
+
+    // 4. Storage folders
+    const localFolders = new Map(
+      (await db.storageFolders.toArray()).map((folder) => [folder.id, folder]),
+    )
+
+    for (const remoteFolder of backup.storageFolders ?? []) {
+      const localFolder = localFolders.get(remoteFolder.id)
+      if (!localFolder) {
+        await db.storageFolders.add(remoteFolder)
+        localFolders.set(remoteFolder.id, remoteFolder)
+        added++
+      } else {
+        const remoteTime = new Date(remoteFolder.updatedAt).getTime()
+        const localTime = new Date(localFolder.updatedAt).getTime()
+        if (remoteTime > localTime) {
+          await db.storageFolders.put(remoteFolder)
+          localFolders.set(remoteFolder.id, remoteFolder)
+          updated++
+        }
+      }
+    }
   })
 
   return { added, updated }
@@ -724,11 +851,12 @@ export async function hardReset(): Promise<void> {
 }
 
 export async function resetAll(): Promise<void> {
-  await db.transaction('rw', db.prompts, db.categories, db.settings, db.todos, async () => {
+  await db.transaction('rw', db.prompts, db.categories, db.settings, db.todos, db.storageFolders, async () => {
     await db.prompts.clear()
     await db.categories.clear()
     await db.settings.clear()
     await db.todos.clear()
+    await db.storageFolders.clear()
   })
 
   // A half-written prompt in sessionStorage is part of the old library too.
@@ -744,6 +872,7 @@ export async function purgeTombstonesOlderThan(days = 90): Promise<{
   prompts: number
   categories: number
   todos: number
+  folders: number
 }> {
   const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000
 
@@ -756,8 +885,9 @@ export async function purgeTombstonesOlderThan(days = 90): Promise<{
   let purgedPrompts = 0
   let purgedCategories = 0
   let purgedTodos = 0
+  let purgedFolders = 0
 
-  await db.transaction('rw', db.prompts, db.categories, db.todos, async () => {
+  await db.transaction('rw', db.prompts, db.categories, db.todos, db.storageFolders, async () => {
     const oldPrompts = await db.prompts.filter((p) => isOlder(p.deletedAt)).primaryKeys()
     if (oldPrompts.length) {
       await db.prompts.bulkDelete(oldPrompts)
@@ -775,12 +905,19 @@ export async function purgeTombstonesOlderThan(days = 90): Promise<{
       await db.todos.bulkDelete(oldTodos)
       purgedTodos = oldTodos.length
     }
+
+    const oldFolders = await db.storageFolders.filter((f) => isOlder(f.deletedAt)).primaryKeys()
+    if (oldFolders.length) {
+      await db.storageFolders.bulkDelete(oldFolders)
+      purgedFolders = oldFolders.length
+    }
   })
 
   return {
     prompts: purgedPrompts,
     categories: purgedCategories,
     todos: purgedTodos,
+    folders: purgedFolders,
   }
 }
 

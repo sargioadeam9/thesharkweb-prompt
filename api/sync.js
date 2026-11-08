@@ -6478,6 +6478,7 @@ var PromptNookDB = class extends import_wrapper_default {
   categories;
   settings;
   todos;
+  storageFolders;
   constructor() {
     super(DB_NAME);
     this.version(1).stores({
@@ -6487,6 +6488,9 @@ var PromptNookDB = class extends import_wrapper_default {
     });
     this.version(2).stores({
       todos: "id, dueDate, createdAt, updatedAt"
+    });
+    this.version(3).stores({
+      storageFolders: "id, createdAt, updatedAt"
     });
   }
 };
@@ -6521,6 +6525,23 @@ function requireText(value, field, max = 4e3) {
 function normalizeDueDate(value) {
   return typeof value === "string" && DUE_DATE_PATTERN.test(value) ? value : void 0;
 }
+function normalizeFolderUrl(value) {
+  if (typeof value !== "string") throw new Error("Folder link must be text");
+  let raw = value.trim();
+  if (!raw) throw new Error("Folder link is required");
+  if (raw.length > 2e3) throw new Error("Folder link is too long");
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = `https://${raw}`;
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("That does not look like a link");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Only http and https links are allowed");
+  }
+  return parsed.toString();
+}
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -6529,6 +6550,21 @@ function requireIsoDate(value, field) {
     throw new Error(`${field} must be a valid date`);
   }
   return value;
+}
+function parseStorageFolders(raw) {
+  if (raw === void 0) return [];
+  if (!Array.isArray(raw)) throw new Error("Invalid backup: storageFolders must be an array");
+  return raw.map((entry, index) => {
+    if (!isRecord(entry)) throw new Error(`Invalid folder at position ${index + 1}`);
+    return {
+      id: requireText(entry.id, `Folder ${index + 1} id`, 200),
+      name: requireText(entry.name, `Folder ${index + 1} name`, 120),
+      url: normalizeFolderUrl(entry.url),
+      deletedAt: typeof entry.deletedAt === "string" ? requireIsoDate(entry.deletedAt, `Folder ${index + 1} deletedAt`) : void 0,
+      createdAt: requireIsoDate(entry.createdAt, `Folder ${index + 1} createdAt`),
+      updatedAt: requireIsoDate(entry.updatedAt, `Folder ${index + 1} updatedAt`)
+    };
+  });
 }
 function parseTodos(raw) {
   if (raw === void 0) return [];
@@ -6589,6 +6625,7 @@ function parseBackup(raw) {
     };
   });
   const todos = parseTodos(raw.todos);
+  const storageFolders = parseStorageFolders(raw.storageFolders);
   const settings = isRecord(raw.settings) ? raw.settings : {};
   const sortBy = SORT_FIELDS.includes(settings.sortBy) ? settings.sortBy : "updatedAt";
   const sortDirection = SORT_DIRECTIONS.includes(settings.sortDirection) ? settings.sortDirection : "desc";
@@ -6599,6 +6636,7 @@ function parseBackup(raw) {
     prompts,
     categories,
     todos,
+    storageFolders,
     settings: {
       sortBy,
       sortDirection,
@@ -6617,7 +6655,8 @@ async function purgeTombstonesOlderThan(days = 90) {
   let purgedPrompts = 0;
   let purgedCategories = 0;
   let purgedTodos = 0;
-  await db.transaction("rw", db.prompts, db.categories, db.todos, async () => {
+  let purgedFolders = 0;
+  await db.transaction("rw", db.prompts, db.categories, db.todos, db.storageFolders, async () => {
     const oldPrompts = await db.prompts.filter((p) => isOlder(p.deletedAt)).primaryKeys();
     if (oldPrompts.length) {
       await db.prompts.bulkDelete(oldPrompts);
@@ -6633,11 +6672,17 @@ async function purgeTombstonesOlderThan(days = 90) {
       await db.todos.bulkDelete(oldTodos);
       purgedTodos = oldTodos.length;
     }
+    const oldFolders = await db.storageFolders.filter((f) => isOlder(f.deletedAt)).primaryKeys();
+    if (oldFolders.length) {
+      await db.storageFolders.bulkDelete(oldFolders);
+      purgedFolders = oldFolders.length;
+    }
   });
   return {
     prompts: purgedPrompts,
     categories: purgedCategories,
-    todos: purgedTodos
+    todos: purgedTodos,
+    folders: purgedFolders
   };
 }
 setAfterSeedHook(async () => {

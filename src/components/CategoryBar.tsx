@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
-import { Database, FolderOpen, HelpCircle, Info, RefreshCw, Settings2 } from 'lucide-react'
+import {
+  Database,
+  FolderOpen,
+  HelpCircle,
+  Info,
+  RefreshCw,
+  Settings2,
+} from 'lucide-react'
 import type { Category } from '../lib/types'
 import type { View } from './Sidebar'
+import OverflowSheet, { OverflowTrigger } from './OverflowSheet'
+import type { OverflowItem } from './OverflowSheet'
+
+const OVERFLOW_ITEMS: OverflowItem[] = [
+  { key: 'storage', label: 'Storage', icon: FolderOpen, view: 'storage' },
+  { key: 'sync', label: 'Live cloud sync', icon: RefreshCw, view: 'sync' },
+  { key: 'faq', label: 'FAQ', icon: HelpCircle, view: 'faq' },
+  { key: 'about', label: 'About', icon: Info, view: 'about' },
+  { key: 'manage', label: 'Manage categories', icon: Settings2, action: 'manage' },
+  { key: 'backup', label: 'Backup & data', icon: Database, action: 'backup' },
+]
 
 type CategoryBarProps = {
   categories: Category[]
@@ -15,18 +33,14 @@ type CategoryBarProps = {
   onOpenBackup: () => void
 }
 
-function chipClass(active: boolean): string {
-  return [
+const chipClass = (active: boolean) =>
+  [
     'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
     active
       ? 'border-ink bg-ink text-surface'
       : 'border-line bg-surface text-ink-muted hover:border-ink-faint/50 hover:text-ink',
   ].join(' ')
-}
-
-const actionClass =
-  'grid size-8 shrink-0 place-items-center rounded-full border border-line bg-surface text-ink-muted transition-colors hover:border-ink-faint/50 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
 
 export default function CategoryBar({
   categories,
@@ -78,8 +92,12 @@ export default function CategoryBar({
   const showStartFade = !edges.start
   const showEndFade = !edges.end
 
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [triggerEl, setTriggerEl] = useState<HTMLElement | null>(null)
+
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-line px-5 py-2.5 lg:hidden">
+    <>
+      <div className="flex shrink-0 items-center gap-2 border-b border-line px-5 py-2.5 lg:hidden">
       <div className="relative min-w-0 flex-1">
         <div
           ref={scrollerRef}
@@ -148,72 +166,23 @@ export default function CategoryBar({
 
       <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
 
-      <button
-        type="button"
-        onClick={() => onSelect('storage')}
-        aria-label="Storage"
-        aria-current={view === 'storage' ? 'page' : undefined}
-        className={
-          view === 'storage'
-            ? 'grid size-8 shrink-0 place-items-center rounded-full border border-ink bg-ink text-surface transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
-            : actionClass
-        }
-      >
-        <FolderOpen className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={() => onSelect('sync')}
-        aria-label="Live cloud sync"
-        aria-current={view === 'sync' ? 'page' : undefined}
-        className={
-          view === 'sync'
-            ? 'grid size-8 shrink-0 place-items-center rounded-full border border-ink bg-ink text-surface transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
-            : actionClass
-        }
-      >
-        <RefreshCw className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={() => onSelect('faq')}
-        aria-label="FAQ"
-        aria-current={view === 'faq' ? 'page' : undefined}
-        className={
-          view === 'faq'
-            ? 'grid size-8 shrink-0 place-items-center rounded-full border border-ink bg-ink text-surface transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
-            : actionClass
-        }
-      >
-        <HelpCircle className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={() => onSelect('about')}
-        aria-label="About"
-        aria-current={view === 'about' ? 'page' : undefined}
-        className={
-          view === 'about'
-            ? 'grid size-8 shrink-0 place-items-center rounded-full border border-ink bg-ink text-surface transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
-            : actionClass
-        }
-      >
-        <Info className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      </button>
+      <OverflowTrigger
+        expanded={sheetOpen}
+        currentTarget={setTriggerEl}
+        onOpen={() => setSheetOpen(true)}
+      />
+      </div>
 
-      <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
-
-      <button
-        type="button"
-        onClick={onManageCategories}
-        aria-label="Manage categories"
-        className={actionClass}
-      >
-        <Settings2 className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      </button>
-      <button type="button" onClick={onOpenBackup} aria-label="Backup and data" className={actionClass}>
-        <Database className="size-4" strokeWidth={1.75} aria-hidden="true" />
-      </button>
-    </div>
+      <OverflowSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        items={OVERFLOW_ITEMS}
+        activeView={view}
+        onSelect={onSelect}
+        onManageCategories={onManageCategories}
+        onOpenBackup={onOpenBackup}
+        triggerEl={triggerEl}
+      />
+    </>
   )
 }

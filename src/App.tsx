@@ -16,6 +16,7 @@ import EmptyState from './components/Panels/EmptyState'
 import PlaceholderPanel from './components/Panels/PlaceholderPanel'
 import ProGate from './components/Panels/ProGate'
 import RecentPanel from './components/RecentPanel'
+import SettingsPanel from './components/SettingsPanel'
 import TagsPanel from './components/TagsPanel'
 import Header from './components/Header'
 import PromptCard from './components/PromptCard'
@@ -421,19 +422,9 @@ function App() {
             ) : activeView === 'archived' ? (
               <ArchivedPanel onNavigate={(target) => changeView(target)} />
             ) : activeView === 'settings' ? (
-              <PlaceholderPanel
-                icon={Library}
-                title="Settings is on the way."
-                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => changeView(null)}
-                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    All Prompts-এ যান
-                  </button>
-                }
+              <SettingsPanel
+                settings={settings}
+                onUpdate={(patch) => repo.updateSettings(patch)}
               />
             ) : activeView === 'analytics' ? (
               <ProGate

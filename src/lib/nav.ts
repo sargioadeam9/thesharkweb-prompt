@@ -93,7 +93,7 @@ export const NAV_GROUPS: NavGroup[] = [
     entries: [
       { key: 'sync', label: 'Cloud Sync', icon: RefreshCw, status: 'live', gate: 'hard', hideHeaderControls: true, hideNewPrompt: true },
       { key: null, label: 'Backup & data', icon: Database, status: 'live', action: 'backup', hideHeaderControls: true, hideNewPrompt: true },
-      { key: 'settings', label: 'Settings', icon: Settings2, status: 'soon', hideHeaderControls: true, hideNewPrompt: true },
+      { key: 'settings', label: 'Settings', icon: Settings2, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'faq', label: 'Help & FAQ', icon: HelpCircle, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
     ],
   },

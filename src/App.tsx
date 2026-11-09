@@ -9,6 +9,7 @@ import BackupPanel from './components/BackupPanel'
 import BackupReminder from './components/BackupReminder'
 import CategoryBar from './components/CategoryBar'
 import CategoryManager from './components/CategoryManager'
+import DashboardPanel from './components/DashboardPanel'
 import FaqPanel from './components/FaqPanel'
 import EmptyState from './components/Panels/EmptyState'
 import PlaceholderPanel from './components/Panels/PlaceholderPanel'
@@ -350,19 +351,14 @@ function App() {
             ) : activeView === 'sync' ? (
               <SyncPanel />
             ) : activeView === 'dashboard' ? (
-              <PlaceholderPanel
-                icon={Library}
-                title="Dashboard is on the way."
-                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => changeView(null)}
-                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    All Prompts-এ যান
-                  </button>
-                }
+              <DashboardPanel
+                prompts={prompts}
+                categories={categories}
+                todos={todos}
+                settings={settings}
+                onNavigate={(target) => changeView(target)}
+                onNewPrompt={() => setModal({ mode: 'create' })}
+                onOpen={(target) => setModal({ mode: 'edit', prompt: target })}
               />
             ) : activeView === 'recent' ? (
               <RecentPanel

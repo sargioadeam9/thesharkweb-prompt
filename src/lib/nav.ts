@@ -63,7 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     entries: [
-      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, status: 'soon', hideHeaderControls: true, hideNewPrompt: true },
+      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
       { key: null, label: 'All Prompts', icon: LayoutGrid, status: 'live', count: 'total' },
       { key: 'favorites', label: 'Favorites', icon: Star, status: 'live', count: 'favorites' },
       { key: 'todos', label: 'My Tasks', icon: ListTodo, status: 'live', count: 'todos', hideHeaderControls: true, hideNewPrompt: true },

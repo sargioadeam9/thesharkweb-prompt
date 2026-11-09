@@ -1,19 +1,12 @@
-import {
-  Database,
-  FolderOpen,
-  HelpCircle,
-  Info,
-  LayoutGrid,
-  ListTodo,
-  RefreshCw,
-  Settings2,
-  Star,
-} from 'lucide-react'
+import { Lock, Settings2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Category } from '../lib/types'
+import type { NavEntry, View } from '../lib/nav'
+import { NAV_GROUPS } from '../lib/nav'
+import { useProAccess, gateState } from '../lib/entitlement'
 import BrandMark from './BrandMark'
 
-export type View = null | 'favorites' | 'todos' | 'storage' | 'sync' | 'about' | 'faq' | string
+export type { View } from '../lib/nav'
 
 type SidebarProps = {
   categories: Category[]
@@ -42,19 +35,75 @@ function pillClass(active: boolean): string {
   ].join(' ')
 }
 
+function NavBadge({
+  entry,
+  active,
+  loading,
+  license,
+}: {
+  entry: NavEntry
+  active: boolean
+  loading: boolean
+  license: import('../lib/sync-types').LicenseView | null
+}) {
+  const locked =
+    entry.gate === 'hard' && !loading && gateState(entry.gate, license, loading) === 'upsell'
+
+  if (entry.gate) {
+    return (
+      <span className="flex shrink-0 items-center gap-1">
+        {locked ? (
+          <Lock
+            className={active ? 'size-3 text-brand-tint' : 'size-3 text-ink-faint'}
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+        ) : null}
+        <span
+          className={[
+            'rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase',
+            active ? 'bg-surface/15 text-surface' : 'bg-brand-tint text-brand-deep',
+          ].join(' ')}
+        >
+          Pro
+        </span>
+      </span>
+    )
+  }
+
+  if (entry.status === 'soon') {
+    return (
+      <span
+        className={[
+          'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase',
+          active ? 'bg-surface/15 text-surface' : 'bg-canvas text-ink-faint',
+        ].join(' ')}
+      >
+        Soon
+      </span>
+    )
+  }
+
+  return null
+}
+
 function NavButton({
   active,
   icon: Icon,
   label,
   count,
+  entry,
   onClick,
 }: {
   active: boolean
   icon: LucideIcon
   label: string
   count?: number
+  entry?: NavEntry
   onClick: () => void
 }) {
+  const { loading, license } = useProAccess()
+
   return (
     <button
       type="button"
@@ -70,7 +119,12 @@ function NavButton({
         />
         <span className="truncate">{label}</span>
       </span>
-      {count === undefined ? null : <span className={pillClass(active)}>{count}</span>}
+      <span className="flex shrink-0 items-center gap-1.5">
+        {count === undefined ? null : <span className={pillClass(active)}>{count}</span>}
+        {entry ? (
+          <NavBadge entry={entry} active={active} loading={loading} license={license} />
+        ) : null}
+      </span>
     </button>
   )
 }
@@ -95,103 +149,113 @@ export default function Sidebar({
         </span>
       </div>
 
-      <nav aria-label="Library" className="flex min-h-0 flex-1 flex-col px-3 py-4">
-        <ul className="shrink-0 space-y-1">
-          <li>
-            <NavButton
-              active={view === null}
-              icon={LayoutGrid}
-              label="All Prompts"
-              count={total}
-              onClick={() => onSelect(null)}
-            />
-          </li>
-          <li>
-            <NavButton
-              active={view === 'favorites'}
-              icon={Star}
-              label="Favorites"
-              count={favorites}
-              onClick={() => onSelect('favorites')}
-            />
-          </li>
-          <li>
-            <NavButton
-              active={view === 'todos'}
-              icon={ListTodo}
-              label="To Do"
-              count={todoCount}
-              onClick={() => onSelect('todos')}
-            />
-          </li>
-        </ul>
+      <nav aria-label="Library" className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
+        {NAV_GROUPS.map((group) => (
+          <section key={group.label} aria-label={group.label} className="mb-5">
+            {group.label ? (
+              <p className="mb-2 px-3 text-[11px] font-medium tracking-[0.06em] text-ink-faint">
+                {group.label}
+              </p>
+            ) : null}
+            <ul className="space-y-1">
+              {group.entries.map((entry) => {
+                const count =
+                  entry.count === 'total'
+                    ? total
+                    : entry.count === 'favorites'
+                      ? favorites
+                      : entry.count === 'todos'
+                        ? todoCount
+                        : undefined
 
-        <div className="mt-6 mb-2 flex shrink-0 items-center justify-between px-3">
-          <p className="text-[11px] font-medium tracking-[0.06em] text-ink-faint">Categories</p>
-          <button
-            type="button"
-            onClick={onManageCategories}
-            aria-label="Manage categories"
-            className="grid size-6 place-items-center rounded-md text-ink-faint transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            <Settings2 className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
-          </button>
-        </div>
-        <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto scroll-smooth pr-0.5 [scrollbar-width:thin]">
-          {categories.map((category) => {
-            const active = view === category.id
-            return (
-              <li key={category.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(category.id)}
-                  aria-current={active ? 'page' : undefined}
-                  className={navClass(active)}
-                >
-                  <span className="truncate">{category.name}</span>
-                  <span className={pillClass(active)}>{counts[category.id] ?? 0}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+                if (entry.action === 'backup') {
+                  return (
+                    <li key={entry.label}>
+                      <NavButton
+                        active={false}
+                        icon={entry.icon}
+                        label={entry.label}
+                        entry={entry}
+                        onClick={onOpenBackup}
+                      />
+                    </li>
+                  )
+                }
 
-        <div className="mt-6 shrink-0 space-y-1 border-t border-line pt-3">
-          <NavButton
-            active={view === 'storage'}
-            icon={FolderOpen}
-            label="Storage"
-            onClick={() => onSelect('storage')}
-          />
-          <NavButton
-            active={view === 'sync'}
-            icon={RefreshCw}
-            label="Live cloud sync"
-            onClick={() => onSelect('sync')}
-          />
-          <NavButton
-            active={view === 'about'}
-            icon={Info}
-            label="About"
-            onClick={() => onSelect('about')}
-          />
-          <NavButton
-            active={view === 'faq'}
-            icon={HelpCircle}
-            label="FAQ"
-            onClick={() => onSelect('faq')}
-          />
-        </div>
+                if (entry.action === 'manageCategories') {
+                  return (
+                    <li key={entry.label}>
+                      <NavButton
+                        active={false}
+                        icon={entry.icon}
+                        label={entry.label}
+                        entry={entry}
+                        onClick={onManageCategories}
+                      />
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={entry.label}>
+                    <NavButton
+                      active={view === entry.key}
+                      icon={entry.icon}
+                      label={entry.label}
+                      count={count}
+                      entry={entry}
+                      onClick={() => onSelect(entry.key)}
+                    />
+                  </li>
+                )
+              })}
+            </ul>
+
+            {group.label === 'Organize' ? (
+              <>
+                <div className="mt-5 mb-2 flex items-center justify-between px-3">
+                  <p className="text-[11px] font-medium tracking-[0.06em] text-ink-faint">Categories</p>
+                  <button
+                    type="button"
+                    onClick={onManageCategories}
+                    aria-label="Manage categories"
+                    className="grid size-6 place-items-center rounded-md text-ink-faint transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    <Settings2 className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
+                  </button>
+                </div>
+                <ul className="max-h-[45vh] space-y-0.5 overflow-y-auto scroll-smooth pr-0.5 [scrollbar-width:thin]">
+                  {categories.map((category) => {
+                    const active = view === category.id
+                    return (
+                      <li key={category.id}>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(category.id)}
+                          aria-current={active ? 'page' : undefined}
+                          className={navClass(active)}
+                        >
+                          <span className="truncate">{category.name}</span>
+                          <span className={pillClass(active)}>{counts[category.id] ?? 0}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </>
+            ) : null}
+          </section>
+        ))}
       </nav>
 
-      <div className="shrink-0 border-t border-line p-3">
+      <div className="shrink-0 border-t border-line p-3 text-center">
         <button
           type="button"
-          onClick={onOpenBackup}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          onClick={() => onSelect('about')}
+          aria-current={view === 'about' ? 'page' : undefined}
+          className="text-[11px] text-ink-faint transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand rounded"
         >
-          <Database className="size-4 shrink-0 text-ink-faint" strokeWidth={1.75} aria-hidden="true" />
-          Backup &amp; data
+          About
         </button>
       </div>
     </aside>

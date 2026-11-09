@@ -1,25 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  Database,
-  FolderOpen,
-  HelpCircle,
-  Info,
-  RefreshCw,
-  Settings2,
-} from 'lucide-react'
 import type { Category } from '../lib/types'
 import type { View } from './Sidebar'
+import { NAV_FLAT } from '../lib/nav'
 import OverflowSheet, { OverflowTrigger } from './OverflowSheet'
 import type { OverflowItem } from './OverflowSheet'
 
-const OVERFLOW_ITEMS: OverflowItem[] = [
-  { key: 'storage', label: 'Storage', icon: FolderOpen, view: 'storage' },
-  { key: 'sync', label: 'Live cloud sync', icon: RefreshCw, view: 'sync' },
-  { key: 'faq', label: 'FAQ', icon: HelpCircle, view: 'faq' },
-  { key: 'about', label: 'About', icon: Info, view: 'about' },
-  { key: 'manage', label: 'Manage categories', icon: Settings2, action: 'manage' },
-  { key: 'backup', label: 'Backup & data', icon: Database, action: 'backup' },
-]
+const OVERFLOW_ITEMS: OverflowItem[] = NAV_FLAT.filter(
+  (entry) => !entry.action || entry.action === 'backup',
+).map((entry) => ({
+  key: entry.label,
+  label: entry.label,
+  icon: entry.icon,
+  view: entry.action ? undefined : entry.key,
+  action: entry.action === 'backup' ? ('backup' as const) : undefined,
+  status: entry.status,
+  gate: entry.gate,
+}))
 
 type CategoryBarProps = {
   categories: Category[]
@@ -128,7 +124,7 @@ export default function CategoryBar({
           aria-current={view === 'todos' ? 'page' : undefined}
           className={chipClass(view === 'todos')}
         >
-          To Do
+          My Tasks
           <span className="tabular-nums opacity-60">{todoCount}</span>
         </button>
         {categories.map((category) => {

@@ -1,31 +1,21 @@
 import { useEffect, useRef } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Ellipsis, X } from 'lucide-react'
+import { Ellipsis, Lock, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { View } from './Sidebar'
+import type { Gate, NavStatus } from '../lib/nav'
+import { useProAccess, gateState } from '../lib/entitlement'
 
 export type OverflowItem = {
   key: string
   label: string
   icon: LucideIcon
-  /** Set when this row switches the view; omitted for modal actions. */
   view?: View
-  /** Set when this row is a modal action (manage categories / backup). */
   action?: 'manage' | 'backup'
-  /** For actions, an optional right-aligned hint. */
   hint?: string
+  status?: NavStatus
+  gate?: Gate
 }
-
-/******************************************************************************\
-  OverflowSheet — mobile bottom sheet listing every secondary action as a
-  labelled row. Unlike an icon-only button, a new visitor can read what each
-  entry does before tapping. Parent keeps the sheet mounted and only changes
-  `open`; this component owns its backdrop, focus and keyboard handling.
-
-  Follows the overlay contract used by PromptModal / BackupPanel:
-  fixed inset-0, role="dialog", aria-modal, Escape closes, backdrop click
-  closes, body scroll locked, focus returns to the trigger on unmount.
-\* **************************************************************************/
 
 type Props = {
   open: boolean
@@ -35,7 +25,6 @@ type Props = {
   onSelect: (view: View) => void
   onManageCategories: () => void
   onOpenBackup: () => void
-  /** The exact element that opened the sheet, captured by the parent. */
   triggerEl: HTMLElement | null
 }
 
@@ -57,8 +46,8 @@ export default function OverflowSheet({
   triggerEl,
 }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null)
+  const { loading, license } = useProAccess()
 
-  // Focus the first row when the sheet opens.
   useEffect(() => {
     if (!open) return
     const first = sheetRef.current?.querySelector<HTMLElement>(
@@ -67,12 +56,10 @@ export default function OverflowSheet({
     first?.focus()
   }, [open ])
 
-  // Return focus to the trigger when the sheet closes.
   useEffect(() => {
     if (!open && triggerEl) triggerEl.focus()
   }, [open, triggerEl])
 
-  // Body scroll lock while open.
   useEffect(() => {
     if (!open) return
     const { overflow } = document.body.style
@@ -165,6 +152,9 @@ export default function OverflowSheet({
             const Icon = item.icon
             const active = item.view !== undefined && activeView === item.view
             const isRadio = item.view !== undefined && item.action === undefined
+            const locked =
+              item.gate === 'hard' && !loading && gateState(item.gate, license, loading) === 'upsell'
+
             return (
               <li key={item.key}>
                 <button
@@ -184,6 +174,19 @@ export default function OverflowSheet({
                     <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-brand-tint">
                       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
                       Current
+                    </span>
+                  ) : item.gate ? (
+                    <span className="ml-auto flex items-center gap-1">
+                      {locked ? (
+                        <Lock className="size-3 text-ink-faint" strokeWidth={2} aria-hidden="true" />
+                      ) : null}
+                      <span className="rounded-full bg-brand-tint px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-brand-deep uppercase">
+                        Pro
+                      </span>
+                    </span>
+                  ) : item.status === 'soon' ? (
+                    <span className="ml-auto rounded-full bg-canvas px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-ink-faint uppercase">
+                      Soon
                     </span>
                   ) : item.hint ? (
                     <span className="ml-auto text-[11px] font-medium text-ink-faint">{item.hint}</span>

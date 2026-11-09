@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Check, Copy, EllipsisVertical, Pencil, Star, StickyNote, Trash2 } from 'lucide-react'
 import { copyText } from '../lib/clipboard'
+import { recordCopy } from '../lib/recent'
 import type { Prompt } from '../lib/types'
 import { wordCount } from '../lib/utils'
 
@@ -11,6 +12,8 @@ type Props = {
   onDuplicate: (prompt: Prompt) => void
   onDelete: (prompt: Prompt) => void
   onToggleFavorite: (prompt: Prompt) => void
+  /** Copies tracked on this device. Only the Recently Used page passes it. */
+  copyCount?: number
 }
 
 type CopyStatus = 'idle' | 'copied' | 'failed'
@@ -18,7 +21,7 @@ type CopyStatus = 'idle' | 'copied' | 'failed'
 const menuItemClass =
   'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] text-ink transition-colors hover:bg-canvas focus-visible:bg-canvas focus-visible:outline-none'
 
-export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onToggleFavorite }: Props) {
+export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onToggleFavorite, copyCount = 0 }: Props) {
   const [status, setStatus] = useState<CopyStatus>('idle')
   const [menuOpen, setMenuOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
@@ -42,6 +45,8 @@ export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onTo
 
   async function handleCopy() {
     const ok = await copyText(prompt.content)
+
+    if (ok) recordCopy(prompt.id)
 
     setStatus(ok ? 'copied' : 'failed')
     window.clearTimeout(timer.current)
@@ -205,8 +210,15 @@ export default function PromptCard({ prompt, onOpen, onDuplicate, onDelete, onTo
         ) : null}
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          <span className="text-[11px] tabular-nums text-ink-faint">
-            {wordCount(prompt.content)} words
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-[11px] tabular-nums text-ink-faint">
+              {wordCount(prompt.content)} words
+            </span>
+            {copyCount > 0 ? (
+              <span className="shrink-0 rounded-md bg-brand-tint px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-brand-deep">
+                Copied ×{copyCount}
+              </span>
+            ) : null}
           </span>
           <button
             type="button"

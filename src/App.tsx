@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Library, Plus, SearchX } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import AboutPanel from './components/AboutPanel'
 import BackupPanel from './components/BackupPanel'
@@ -11,6 +9,11 @@ import BackupReminder from './components/BackupReminder'
 import CategoryBar from './components/CategoryBar'
 import CategoryManager from './components/CategoryManager'
 import FaqPanel from './components/FaqPanel'
+import EmptyState from './components/Panels/EmptyState'
+import PlaceholderPanel from './components/Panels/PlaceholderPanel'
+import ProGate from './components/Panels/ProGate'
+import RecentPanel from './components/RecentPanel'
+import TagsPanel from './components/TagsPanel'
 import Header from './components/Header'
 import PromptCard from './components/PromptCard'
 import PromptModal from './components/PromptModal'
@@ -20,6 +23,7 @@ import SyncPanel from './components/SyncPanel'
 import TodoPanel from './components/TodoPanel'
 import { APP_VERSION } from './lib/app-info'
 import { db, ensureSeeded } from './lib/db'
+import { PRIMARY_VIEWS, flagsForView, titleForView } from './lib/nav'
 import * as repo from './lib/repo'
 import type { Prompt, PromptInput, SortDirection, SortField } from './lib/types'
 import { sortPrompts } from './lib/utils'
@@ -42,36 +46,6 @@ function localDayKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: {
-  icon: LucideIcon
-  title: string
-  description: string
-  action?: ReactNode
-}) {
-  return (
-    <div className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-[400px] text-center">
-        <span
-          aria-hidden="true"
-          className="mx-auto mb-6 grid size-11 place-items-center rounded-2xl border border-line bg-surface shadow-sm"
-        >
-          <Icon className="size-5 text-ink-muted" strokeWidth={1.75} />
-        </span>
-        <h2 className="text-[20px] font-semibold tracking-[-0.025em] text-balance">{title}</h2>
-        <p className="mx-auto mt-2.5 max-w-[340px] text-[14px] leading-relaxed text-pretty text-ink-muted">
-          {description}
-        </p>
-        {action ? <div className="mt-5">{action}</div> : null}
-      </div>
-    </div>
-  )
 }
 
 function App() {
@@ -157,14 +131,7 @@ function App() {
 
   // A category can disappear while it is the active view, so derive instead of storing.
   const activeView: View =
-    view &&
-    view !== 'favorites' &&
-    view !== 'todos' &&
-    view !== 'storage' &&
-    view !== 'sync' &&
-    view !== 'about' &&
-    view !== 'faq' &&
-    !categories.some((category) => category.id === view)
+    view && !PRIMARY_VIEWS.includes(view) && !categories.some((category) => category.id === view)
       ? null
       : view
 
@@ -214,22 +181,8 @@ function App() {
     return sortPrompts(list, settings?.sortBy ?? 'updatedAt', settings?.sortDirection ?? 'desc')
   }, [prompts, activeView, query, settings])
 
-  const title =
-    activeView === null
-      ? 'All Prompts'
-      : activeView === 'favorites'
-        ? 'Favorites'
-        : activeView === 'todos'
-          ? 'To Do'
-          : activeView === 'storage'
-            ? 'Storage'
-            : activeView === 'sync'
-              ? 'Live cloud sync'
-              : activeView === 'about'
-                ? 'About'
-                : activeView === 'faq'
-                  ? 'FAQ'
-                  : (categories.find((category) => category.id === activeView)?.name ?? 'All Prompts')
+  const title = titleForView(activeView, categories)
+  const viewFlags = flagsForView(activeView)
 
   const sortValue = `${settings?.sortBy ?? 'updatedAt'}-${settings?.sortDirection ?? 'desc'}`
 
@@ -365,16 +318,8 @@ function App() {
             sortValue={sortValue}
             onSortChange={handleSortChange}
             onNew={() => setModal({ mode: 'create' })}
-            showControls={
-              activeView !== 'about' &&
-              activeView !== 'faq' &&
-              activeView !== 'todos' &&
-              activeView !== 'storage' &&
-              activeView !== 'sync'
-            }
-            showNew={
-              activeView !== 'todos' && activeView !== 'storage' && activeView !== 'sync'
-            }
+            showControls={!viewFlags.hideHeaderControls}
+            showNew={!viewFlags.hideNewPrompt}
           />
           <CategoryBar
             categories={categories}
@@ -403,6 +348,142 @@ function App() {
               <StoragePanel />
             ) : activeView === 'sync' ? (
               <SyncPanel />
+            ) : activeView === 'dashboard' ? (
+              <PlaceholderPanel
+                icon={Library}
+                title="Dashboard is on the way."
+                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => changeView(null)}
+                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    All Prompts-এ যান
+                  </button>
+                }
+              />
+            ) : activeView === 'recent' ? (
+              <RecentPanel
+                prompts={prompts}
+                categories={categories}
+                onNavigate={(target) => changeView(target)}
+                onOpen={(target) => setModal({ mode: 'edit', prompt: target })}
+                onDuplicate={handleDuplicate}
+                onDelete={handleDelete}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            ) : activeView === 'collections' ? (
+              <PlaceholderPanel
+                icon={Library}
+                title="Collections is on the way."
+                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => changeView(null)}
+                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    All Prompts-এ যান
+                  </button>
+                }
+              />
+            ) : activeView === 'tags' ? (
+              <TagsPanel
+                prompts={prompts}
+                onNavigate={(target) => changeView(target)}
+                onOpen={(target) => setModal({ mode: 'edit', prompt: target })}
+                onDuplicate={handleDuplicate}
+                onDelete={handleDelete}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            ) : activeView === 'templates' ? (
+              <PlaceholderPanel
+                icon={Library}
+                title="Templates is on the way."
+                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => changeView(null)}
+                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    All Prompts-এ যান
+                  </button>
+                }
+              />
+            ) : activeView === 'archived' ? (
+              <PlaceholderPanel
+                icon={Library}
+                title="Archived is on the way."
+                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => changeView(null)}
+                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    All Prompts-এ যান
+                  </button>
+                }
+              />
+            ) : activeView === 'settings' ? (
+              <PlaceholderPanel
+                icon={Library}
+                title="Settings is on the way."
+                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => changeView(null)}
+                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    All Prompts-এ যান
+                  </button>
+                }
+              />
+            ) : activeView === 'analytics' ? (
+              <ProGate
+               gate="hard"
+               title="Analytics"
+                description="এই ফিচারটা Pro প্ল্যানের সাথে খোলে।"
+                onUpgrade={() => changeView('sync')}
+              >
+                <PlaceholderPanel
+                  icon={Library}
+                  title="Analytics is on the way."
+                  description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
+                  badge="pro"
+                />
+              </ProGate>
+            ) : activeView === 'enhancer' ? (
+              <ProGate
+                gate="soft"
+                title="Prompt Enhancer"
+                description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
+                onUpgrade={() => changeView('sync')}
+              >
+                <PlaceholderPanel
+                  icon={Library}
+                  title="Prompt Enhancer is on the way."
+                  description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
+                  badge="pro"
+                />
+              </ProGate>
+            ) : activeView === 'generator' ? (
+              <ProGate
+                gate="soft"
+                title="Prompt Generator"
+                description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
+                onUpgrade={() => changeView('sync')}
+              >
+                <PlaceholderPanel
+                  icon={Library}
+                  title="Prompt Generator is on the way."
+                  description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
+                  badge="pro"
+                />
+              </ProGate>
             ) : (
               <>
                 <p aria-live="polite" className="sr-only">

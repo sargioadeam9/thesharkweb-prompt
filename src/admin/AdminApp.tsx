@@ -270,9 +270,11 @@ export default function AdminApp() {
           </div>
         ) : null}
 
-        {tab === 'ai' ? (
+        <div className={tab === 'ai' ? '' : 'hidden'}>
           <AiSettingsPanel />
-        ) : tab === 'pending' ? (
+        </div>
+
+        {tab === 'pending' ? (
           <section className="mt-4 space-y-2">
             {requests === null ? (
               <div className="h-24 animate-pulse rounded-xl border border-line bg-surface/60" />

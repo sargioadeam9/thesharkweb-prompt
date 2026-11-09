@@ -393,21 +393,6 @@ function App() {
                 onDelete={handleDelete}
                 onToggleFavorite={handleToggleFavorite}
               />
-            ) : activeView === 'collections' ? (
-              <PlaceholderPanel
-                icon={Library}
-                title="Collections is on the way."
-                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => changeView(null)}
-                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    All Prompts-এ যান
-                  </button>
-                }
-              />
             ) : activeView === 'tags' ? (
               <TagsPanel
                 prompts={prompts}

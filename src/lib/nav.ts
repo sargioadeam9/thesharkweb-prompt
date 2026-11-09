@@ -2,7 +2,6 @@ import {
   Archive,
   BarChart3,
   Database,
-  FolderKanban,
   FolderOpen,
   HelpCircle,
   History,
@@ -31,7 +30,6 @@ export type View =
   | 'faq'
   | 'dashboard'
   | 'recent'
-  | 'collections'
   | 'tags'
   | 'templates'
   | 'archived'
@@ -73,7 +71,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Organize',
     entries: [
-      { key: 'collections', label: 'Collections', icon: FolderKanban, status: 'soon', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'tags', label: 'Tags & Labels', icon: Tags, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'templates', label: 'Templates', icon: LayoutTemplate, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'archived', label: 'Archived', icon: Archive, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
@@ -118,7 +115,6 @@ const TITLE_MAP: Partial<Record<string, string>> = {
   faq: 'FAQ',
   dashboard: 'Dashboard',
   recent: 'Recently Used',
-  collections: 'Collections',
   tags: 'Tags & Labels',
   templates: 'Templates',
   archived: 'Archived',

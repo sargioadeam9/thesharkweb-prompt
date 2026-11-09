@@ -76,7 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'collections', label: 'Collections', icon: FolderKanban, status: 'soon', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'tags', label: 'Tags & Labels', icon: Tags, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'templates', label: 'Templates', icon: LayoutTemplate, status: 'soon', hideHeaderControls: true, hideNewPrompt: true },
-      { key: 'archived', label: 'Archived', icon: Archive, status: 'soon', hideHeaderControls: true, hideNewPrompt: true },
+      { key: 'archived', label: 'Archived', icon: Archive, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'storage', label: 'Storage', icon: FolderOpen, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
     ],
   },

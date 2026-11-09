@@ -27,5 +27,9 @@ dist-ssr
 .shots/
 .workbuddy-ai/
 
+# agent tooling (not part of the product)
+.commandcode/
+.perch/
+
 # supabase CLI local state (project ref, pooler url)
 supabase/.temp/

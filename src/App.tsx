@@ -10,6 +10,7 @@ import BackupReminder from './components/BackupReminder'
 import CategoryBar from './components/CategoryBar'
 import CategoryManager from './components/CategoryManager'
 import DashboardPanel from './components/DashboardPanel'
+import TemplatesPanel from './components/TemplatesPanel'
 import FaqPanel from './components/FaqPanel'
 import EmptyState from './components/Panels/EmptyState'
 import PlaceholderPanel from './components/Panels/PlaceholderPanel'
@@ -25,8 +26,10 @@ import SyncPanel from './components/SyncPanel'
 import TodoPanel from './components/TodoPanel'
 import { APP_VERSION } from './lib/app-info'
 import { db, ensureSeeded } from './lib/db'
+import { writeDraft } from './lib/draft'
 import { PRIMARY_VIEWS, flagsForView, titleForView } from './lib/nav'
 import * as repo from './lib/repo'
+import type { Template } from './lib/templates'
 import type { Prompt, PromptInput, SortDirection, SortField } from './lib/types'
 import { sortPrompts } from './lib/utils'
 
@@ -218,6 +221,25 @@ function App() {
     })
   }
 
+  function handleNewFromTemplate(template: Template) {
+    // PromptModal reads the draft at mount, so seed it before opening.
+    // defaultCategoryId is derived from activeView, which is 'templates' here,
+    // so resolve a real category: match the template's label if the user has
+    // one by that name, otherwise fall back to their first category.
+    const matched = categories.find(
+      (category) => category.name.toLowerCase() === template.category.toLowerCase(),
+    )
+
+    writeDraft({
+      title: template.title,
+      content: template.content,
+      categoryId: matched?.id ?? categories[0]?.id ?? '',
+      notes: '',
+      tags: '',
+    })
+    setModal({ mode: 'create' })
+  }
+
   async function handleSubmit(input: PromptInput) {
     if (modal?.mode === 'edit') {
       await repo.updatePrompt(modal.prompt.id, input)
@@ -395,20 +417,7 @@ function App() {
                 onToggleFavorite={handleToggleFavorite}
               />
             ) : activeView === 'templates' ? (
-              <PlaceholderPanel
-                icon={Library}
-                title="Templates is on the way."
-                description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => changeView(null)}
-                    className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    All Prompts-এ যান
-                  </button>
-                }
-              />
+              <TemplatesPanel onNewFromTemplate={handleNewFromTemplate} />
             ) : activeView === 'archived' ? (
               <ArchivedPanel onNavigate={(target) => changeView(target)} />
             ) : activeView === 'settings' ? (

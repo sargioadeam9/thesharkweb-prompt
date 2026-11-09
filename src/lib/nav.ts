@@ -80,8 +80,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'AI Tools',
     entries: [
-      { key: 'enhancer', label: 'Prompt Enhancer', icon: WandSparkles, status: 'soon', gate: 'soft', hideHeaderControls: true, hideNewPrompt: true },
-      { key: 'generator', label: 'Prompt Generator', icon: Sparkles, status: 'soon', gate: 'soft', hideHeaderControls: true, hideNewPrompt: true },
+      { key: 'enhancer', label: 'Prompt Enhancer', icon: WandSparkles, status: 'live', gate: 'soft', hideHeaderControls: true, hideNewPrompt: true },
+      { key: 'generator', label: 'Prompt Generator', icon: Sparkles, status: 'live', gate: 'soft', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'analytics', label: 'Analytics', icon: BarChart3, status: 'soon', gate: 'hard', hideHeaderControls: true, hideNewPrompt: true },
     ],
   },

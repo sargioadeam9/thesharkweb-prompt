@@ -13,7 +13,8 @@ Everything lives in the browser's IndexedDB. A JSON export is the only copy that
 - Undo after delete, keyboard shortcuts (`N` new prompt, `T` To Do, `/` search, `Esc` closes dialogs)
 - Category manager: rename, and move or delete prompts when a category goes away
 - JSON backup: verified before import, merge or replace, and a guarded full reset
-- No backend, no accounts, no tracking
+- Prompt Enhancer and Prompt Generator (AI), with per-plan monthly quota
+- Local-first; optional paid cloud sync and AI tools
 
 ## Stack
 

@@ -19,6 +19,11 @@ const FAQS: Faq[] = [
       'Not for local use. Open the app and start saving. You only sign in with Google when you want Live cloud sync, so the same library can follow you to other devices.',
   },
   {
+    question: 'Does AI see my prompts?',
+    answer:
+      'Only the text you type into Prompt Enhancer or Prompt Generator, and only when you press Run. It goes to a third-party AI provider to generate the result. Your saved library is never sent. Do not paste passwords or API keys.',
+  },
+  {
     question: 'Where are my prompts stored?',
     answer:
       'In this browser, on this device, by default. If you turn on Live cloud sync, a copy is also stored in our cloud so your signed-in devices can read it.',

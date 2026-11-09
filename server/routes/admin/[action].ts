@@ -8,6 +8,8 @@ import licenses from '../../admin/licenses'
 import requests from '../../admin/requests'
 import blobVersions from '../../admin/blob-versions'
 import restoreBlob from '../../admin/restore-blob'
+import aiConfig from '../../admin/ai-config'
+import aiTest from '../../admin/ai-test'
 
 type Handler = (req: Req, res: Res) => Promise<void> | void
 
@@ -23,6 +25,8 @@ const ROUTES: Record<string, Handler> = {
   requests,
   'blob-versions': blobVersions,
   'restore-blob': restoreBlob,
+  'ai-config': aiConfig,
+  'ai-test': aiTest,
 }
 
 export default async function handler(req: Req, res: Res) {

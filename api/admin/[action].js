@@ -685,6 +685,549 @@ async function handler9(req, res) {
   res.status(200).json({ version: newVersion });
 }
 
+// server/ai.ts
+var DEFAULT_SYSTEM_PROMPT = "You are a prompt engineering assistant. Reply with the finished prompt text only. No preamble, no explanation, no markdown fences.";
+async function loadAiConfig() {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase.from("ai_config").select("*").eq("id", "app").maybeSingle();
+  if (error) {
+    console.error("Failed to load ai_config:", error.message);
+    return null;
+  }
+  return data ?? null;
+}
+function maskKey(key) {
+  if (!key) return "";
+  const tail = key.slice(-4);
+  return `sk-\u2026${tail}`;
+}
+var PRIVATE_HOST_PATTERNS = [
+  /^localhost$/i,
+  /^127\./,
+  /^10\./,
+  /^192\.168\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^169\.254\./,
+  /^0\./,
+  /^\[?::1\]?$/,
+  /^\[?f[cd][0-9a-f]{2}:/i,
+  /\.local$/i,
+  /\.internal$/i
+];
+function isSafeBaseUrl(raw) {
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:") return false;
+  const host = url.hostname.toLowerCase();
+  if (!host || host === "") return false;
+  return !PRIVATE_HOST_PATTERNS.some((pattern) => pattern.test(host));
+}
+function normalizeBaseUrl(raw) {
+  return raw.trim().replace(/\/+$/, "");
+}
+function completionsUrl(baseUrl) {
+  const base = normalizeBaseUrl(baseUrl);
+  if (/\/chat\/completions$/.test(base)) return base;
+  return `${base}/chat/completions`;
+}
+function chainForPlan(config, plan, maxAttempts) {
+  const raw = config.plan_models?.[plan];
+  const list = Array.isArray(raw) ? raw : [];
+  const cleaned = list.filter((item) => typeof item === "string").map((item) => item.trim()).filter((item) => item.length > 0);
+  const unique = [];
+  for (const model of cleaned) {
+    if (!unique.includes(model)) unique.push(model);
+  }
+  const chain = unique.length > 0 ? unique : [config.default_model];
+  const cap = Math.max(1, Math.min(maxAttempts || 3, 6));
+  return chain.slice(0, cap);
+}
+function normalizeContent(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  const choices = payload.choices;
+  if (!Array.isArray(choices) || choices.length === 0) return null;
+  const first = choices[0];
+  const content = first?.message?.content ?? first?.text;
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    const joined = content.map(
+      (part) => part && typeof part === "object" && typeof part.text === "string" ? part.text : ""
+    ).join("").trim();
+    return joined || null;
+  }
+  return null;
+}
+function readTokens(payload) {
+  if (!payload || typeof payload !== "object") return { tokensIn: null, tokensOut: null };
+  const usage = payload.usage;
+  if (!usage) return { tokensIn: null, tokensOut: null };
+  return {
+    tokensIn: typeof usage.prompt_tokens === "number" ? usage.prompt_tokens : null,
+    tokensOut: typeof usage.completion_tokens === "number" ? usage.completion_tokens : null
+  };
+}
+function classify(status, bodyText) {
+  const lower = bodyText.toLowerCase();
+  const error = bodyText.slice(0, 300);
+  if (status === 401 || status === 403) {
+    return { retryable: false, fatal: true, error };
+  }
+  if (status === 402) {
+    return { retryable: false, fatal: true, error };
+  }
+  if (lower.includes("insufficient") && (lower.includes("credit") || lower.includes("quota") || lower.includes("balance"))) {
+    return { retryable: false, fatal: true, error };
+  }
+  if (status === 400) {
+    const paramIssue = lower.includes("context_length") || lower.includes("context length") || lower.includes("too long") || lower.includes("maximum context") || lower.includes("unsupported") || lower.includes("unrecognized") || lower.includes("invalid_request_error");
+    return { retryable: true, fatal: false, error: paramIssue ? "param_rejected" : error };
+  }
+  return { retryable: true, fatal: false, error };
+}
+async function callModel(args) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(1e3, args.timeoutMs));
+  const body = args.minimal ? { model: args.model, messages: args.messages } : {
+    model: args.model,
+    messages: args.messages,
+    temperature: args.temperature,
+    max_tokens: args.maxTokens
+  };
+  try {
+    const res = await fetch(args.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${args.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    const raw = await res.text();
+    let parsed = null;
+    try {
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch {
+      parsed = null;
+    }
+    if (!res.ok) {
+      const verdict = classify(res.status, raw);
+      return {
+        ok: false,
+        text: null,
+        status: res.status,
+        error: verdict.error,
+        retryable: verdict.retryable,
+        fatal: verdict.fatal,
+        tokensIn: null,
+        tokensOut: null
+      };
+    }
+    const text = normalizeContent(parsed);
+    if (!text || text.length < 2) {
+      return {
+        ok: false,
+        text: null,
+        status: res.status,
+        error: "empty_content",
+        retryable: true,
+        fatal: false,
+        tokensIn: null,
+        tokensOut: null
+      };
+    }
+    const tokens = readTokens(parsed);
+    return {
+      ok: true,
+      text,
+      status: res.status,
+      error: null,
+      retryable: false,
+      fatal: false,
+      tokensIn: tokens.tokensIn,
+      tokensOut: tokens.tokensOut
+    };
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === "AbortError";
+    return {
+      ok: false,
+      text: null,
+      status: null,
+      error: aborted ? "timeout" : err instanceof Error ? err.message : "network_error",
+      retryable: true,
+      fatal: false,
+      tokensIn: null,
+      tokensOut: null
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function runChain(args) {
+  const { config, apiKey, baseUrl, chain, systemPrompt, input, deadline } = args;
+  const url = completionsUrl(baseUrl);
+  const temperature = Number(config.temperature);
+  const maxTokens = Number(config.max_tokens);
+  const perCallTimeout = Number(config.request_timeout_ms) || 25e3;
+  const messages = [
+    { role: "system", content: systemPrompt || DEFAULT_SYSTEM_PROMPT },
+    { role: "user", content: input }
+  ];
+  const steps = [];
+  let tokensIn = null;
+  let tokensOut = null;
+  for (const model of chain) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 500) {
+      steps.push({ model, status: null, ms: 0, error: "budget_exhausted" });
+      break;
+    }
+    const timeoutMs = Math.min(perCallTimeout, remaining);
+    const startedAt = Date.now();
+    let attempt = await callModel({
+      url,
+      apiKey,
+      model,
+      messages,
+      temperature: Number.isFinite(temperature) ? temperature : 0.4,
+      maxTokens: Number.isFinite(maxTokens) ? maxTokens : 800,
+      timeoutMs,
+      minimal: false
+    });
+    if (!attempt.ok && attempt.error === "param_rejected") {
+      const left = deadline - Date.now();
+      if (left > 500) {
+        attempt = await callModel({
+          url,
+          apiKey,
+          model,
+          messages,
+          temperature: 0.4,
+          maxTokens: 800,
+          timeoutMs: Math.min(perCallTimeout, left),
+          minimal: true
+        });
+      }
+    }
+    const ms = Date.now() - startedAt;
+    steps.push({
+      model,
+      status: attempt.status,
+      ms,
+      error: attempt.ok ? null : attempt.error
+    });
+    if (attempt.ok && attempt.text) {
+      tokensIn = attempt.tokensIn;
+      tokensOut = attempt.tokensOut;
+      return {
+        ok: true,
+        text: attempt.text,
+        model,
+        chain: steps,
+        tokensIn,
+        tokensOut,
+        errorCode: null,
+        fatal: false
+      };
+    }
+    if (attempt.fatal) {
+      return {
+        ok: false,
+        text: null,
+        model: null,
+        chain: steps,
+        tokensIn: null,
+        tokensOut: null,
+        errorCode: attempt.status === 402 ? "provider_credits" : "provider_auth",
+        fatal: true
+      };
+    }
+    if (Date.now() >= deadline) break;
+  }
+  return {
+    ok: false,
+    text: null,
+    model: null,
+    chain: steps,
+    tokensIn: null,
+    tokensOut: null,
+    errorCode: "ai_failed",
+    fatal: false
+  };
+}
+
+// server/admin/ai-config.ts
+function isRecord7(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function asNumber(value, fallback) {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+function asStringList(value) {
+  if (Array.isArray(value)) {
+    return value.filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+function asPlanModels(value) {
+  if (!isRecord7(value)) return {};
+  const out = {};
+  for (const [plan, raw] of Object.entries(value)) {
+    const list = asStringList(raw);
+    if (list.length > 0) out[plan] = list;
+  }
+  return out;
+}
+function asPlanLimits(value) {
+  if (!isRecord7(value)) return {};
+  const out = {};
+  for (const [plan, raw] of Object.entries(value)) {
+    if (raw === null || raw === "") {
+      out[plan] = null;
+      continue;
+    }
+    const parsed = typeof raw === "number" ? raw : Number(raw);
+    if (Number.isFinite(parsed)) out[plan] = Math.max(0, Math.trunc(parsed));
+  }
+  return out;
+}
+async function handler10(req, res) {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  const supabase = getServiceClient();
+  if (req.method === "GET") {
+    const { data, error } = await supabase.from("ai_config").select("*").eq("id", "app").maybeSingle();
+    if (error) {
+      console.error("Failed to read ai_config:", error.message);
+      res.status(500).json({ ok: false, error: "ai_config_read_failed" });
+      return;
+    }
+    if (!data) {
+      res.status(200).json({
+        enabled: false,
+        baseUrl: "",
+        defaultModel: "",
+        maskedKey: "",
+        systemPrompt: "",
+        temperature: 0.4,
+        maxTokens: 800,
+        request_timeout_ms: 25e3,
+        total_budget_ms: 45e3,
+        max_attempts: 3,
+        planModels: {},
+        planLimits: { free: 3 },
+        monthly_budget_usd: null,
+        price_per_million_in: null,
+        price_per_million_out: null
+      });
+      return;
+    }
+    const row = data;
+    res.status(200).json({
+      enabled: Boolean(row.enabled),
+      baseUrl: row.base_url ?? "",
+      defaultModel: row.default_model ?? "",
+      maskedKey: maskKey(row.api_key),
+      systemPrompt: row.system_prompt ?? "",
+      temperature: Number(row.temperature ?? 0.4),
+      maxTokens: Number(row.max_tokens ?? 800),
+      request_timeout_ms: Number(row.request_timeout_ms ?? 25e3),
+      total_budget_ms: Number(row.total_budget_ms ?? 45e3),
+      max_attempts: Number(row.max_attempts ?? 3),
+      planModels: row.plan_models ?? {},
+      planLimits: row.plan_limits ?? { free: 3 },
+      monthly_budget_usd: row.monthly_budget_usd === null || row.monthly_budget_usd === void 0 ? null : Number(row.monthly_budget_usd),
+      price_per_million_in: row.price_per_million_in === null || row.price_per_million_in === void 0 ? null : Number(row.price_per_million_in),
+      price_per_million_out: row.price_per_million_out === null || row.price_per_million_out === void 0 ? null : Number(row.price_per_million_out)
+    });
+    return;
+  }
+  if (req.method !== "POST") {
+    res.status(405).json({ ok: false, error: "method_not_allowed" });
+    return;
+  }
+  const body = isRecord7(req.body) ? req.body : {};
+  const { data: existingRaw, error: readError } = await supabase.from("ai_config").select("*").eq("id", "app").maybeSingle();
+  if (readError) {
+    console.error("Failed to read ai_config before update:", readError.message);
+    res.status(500).json({ ok: false, error: "ai_config_read_failed" });
+    return;
+  }
+  const existing = existingRaw ?? null;
+  const baseUrlRaw = typeof body.baseUrl === "string" ? body.baseUrl.trim() : existing?.base_url ?? "";
+  if (!baseUrlRaw) {
+    res.status(400).json({ ok: false, error: "baseUrl is required" });
+    return;
+  }
+  if (!isSafeBaseUrl(baseUrlRaw)) {
+    res.status(400).json({ ok: false, error: "baseUrl must be a public https URL" });
+    return;
+  }
+  const defaultModel = typeof body.defaultModel === "string" && body.defaultModel.trim() ? body.defaultModel.trim() : existing?.default_model ?? "";
+  if (!defaultModel) {
+    res.status(400).json({ ok: false, error: "defaultModel is required" });
+    return;
+  }
+  const providedKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+  const apiKey = providedKey || existing?.api_key || "";
+  if (!apiKey) {
+    res.status(400).json({ ok: false, error: "apiKey is required on first save" });
+    return;
+  }
+  const systemPrompt = typeof body.systemPrompt === "string" ? body.systemPrompt.trim() : existing?.system_prompt ?? null;
+  const monthlyRaw = body.monthly_budget_usd;
+  const monthlyBudget = monthlyRaw === null || monthlyRaw === "" || monthlyRaw === void 0 ? null : Math.max(0, asNumber(monthlyRaw, 0));
+  const priceInRaw = body.price_per_million_in;
+  const priceIn = priceInRaw === null || priceInRaw === "" || priceInRaw === void 0 ? null : Math.max(0, asNumber(priceInRaw, 0));
+  const priceOutRaw = body.price_per_million_out;
+  const priceOut = priceOutRaw === null || priceOutRaw === "" || priceOutRaw === void 0 ? null : Math.max(0, asNumber(priceOutRaw, 0));
+  const patch = {
+    id: "app",
+    enabled: typeof body.enabled === "boolean" ? body.enabled : Boolean(existing?.enabled),
+    base_url: normalizeBaseUrl(baseUrlRaw),
+    default_model: defaultModel,
+    api_key: apiKey,
+    system_prompt: systemPrompt,
+    temperature: Math.min(2, Math.max(0, asNumber(body.temperature, 0.4))),
+    max_tokens: Math.max(1, Math.trunc(asNumber(body.maxTokens, 800))),
+    request_timeout_ms: Math.max(1e3, Math.trunc(asNumber(body.request_timeout_ms, 25e3))),
+    total_budget_ms: Math.max(1e3, Math.trunc(asNumber(body.total_budget_ms, 45e3))),
+    max_attempts: Math.min(6, Math.max(1, Math.trunc(asNumber(body.max_attempts, 3)))),
+    plan_models: asPlanModels(body.planModels),
+    plan_limits: asPlanLimits(body.planLimits),
+    monthly_budget_usd: monthlyBudget,
+    price_per_million_in: priceIn,
+    price_per_million_out: priceOut,
+    updated_at: (/* @__PURE__ */ new Date()).toISOString(),
+    updated_by: admin.email || "admin"
+  };
+  const { error: upsertError } = await supabase.from("ai_config").upsert(patch, { onConflict: "id" });
+  if (upsertError) {
+    console.error("Failed to save ai_config:", upsertError.message);
+    res.status(500).json({ ok: false, error: "ai_config_save_failed" });
+    return;
+  }
+  await supabase.from("audit_log").insert({
+    actor: admin.email || "admin",
+    action: "ai.config",
+    subject: null,
+    detail: {
+      enabled: patch.enabled,
+      baseUrl: patch.base_url,
+      defaultModel: patch.default_model,
+      keyChanged: Boolean(providedKey),
+      temperature: patch.temperature,
+      maxTokens: patch.max_tokens,
+      request_timeout_ms: patch.request_timeout_ms,
+      total_budget_ms: patch.total_budget_ms,
+      max_attempts: patch.max_attempts,
+      planModels: patch.plan_models,
+      planLimits: patch.plan_limits,
+      monthly_budget_usd: patch.monthly_budget_usd,
+      price_per_million_in: patch.price_per_million_in,
+      price_per_million_out: patch.price_per_million_out
+    }
+  });
+  res.status(200).json({ ok: true, maskedKey: maskKey(apiKey) });
+}
+
+// server/admin/ai-test.ts
+function isRecord8(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+async function handler11(req, res) {
+  if (req.method !== "POST") {
+    res.status(405).json({ ok: false, error: "method_not_allowed" });
+    return;
+  }
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  const body = isRecord8(req.body) ? req.body : {};
+  const saved = await loadAiConfig();
+  const baseUrlRaw = typeof body.baseUrl === "string" && body.baseUrl.trim() ? body.baseUrl.trim() : saved?.base_url ?? "";
+  if (!baseUrlRaw) {
+    res.status(400).json({ ok: false, error: "baseUrl is required" });
+    return;
+  }
+  if (!isSafeBaseUrl(baseUrlRaw)) {
+    res.status(400).json({ ok: false, error: "baseUrl must be a public https URL" });
+    return;
+  }
+  const providedKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+  const apiKey = providedKey || saved?.api_key || "";
+  if (!apiKey) {
+    res.status(400).json({ ok: false, error: "apiKey is required" });
+    return;
+  }
+  const plan = typeof body.plan === "string" && body.plan.trim() ? body.plan.trim() : "free";
+  const defaultModel = typeof body.model === "string" && body.model.trim() ? body.model.trim() : saved?.default_model ?? "";
+  if (!defaultModel) {
+    res.status(400).json({ ok: false, error: "model is required" });
+    return;
+  }
+  const effective = {
+    id: "app",
+    enabled: true,
+    base_url: normalizeBaseUrl(baseUrlRaw),
+    default_model: defaultModel,
+    api_key: apiKey,
+    system_prompt: saved?.system_prompt ?? null,
+    temperature: saved?.temperature ?? 0.4,
+    max_tokens: saved?.max_tokens ?? 800,
+    request_timeout_ms: saved?.request_timeout_ms ?? 25e3,
+    total_budget_ms: saved?.total_budget_ms ?? 45e3,
+    max_attempts: saved?.max_attempts ?? 3,
+    plan_models: saved?.plan_models ?? {},
+    plan_limits: saved?.plan_limits ?? {},
+    monthly_budget_usd: saved?.monthly_budget_usd ?? null
+  };
+  if (isRecord8(body.planModels)) {
+    const rawChain = body.planModels[plan];
+    if (Array.isArray(rawChain)) {
+      effective.plan_models = {
+        ...effective.plan_models ?? {},
+        [plan]: rawChain.filter((item) => typeof item === "string")
+      };
+    } else if (typeof rawChain === "string") {
+      effective.plan_models = {
+        ...effective.plan_models ?? {},
+        [plan]: rawChain.split(",").map((item) => item.trim()).filter(Boolean)
+      };
+    }
+  }
+  const chain = chainForPlan(effective, plan, Number(effective.max_attempts) || 3);
+  const budget = Number(effective.total_budget_ms) || 45e3;
+  const outcome = await runChain({
+    config: effective,
+    apiKey,
+    baseUrl: effective.base_url,
+    chain,
+    systemPrompt: effective.system_prompt || DEFAULT_SYSTEM_PROMPT,
+    input: "Reply with the single word: ready",
+    deadline: Date.now() + budget
+  });
+  res.status(200).json({
+    ok: outcome.ok,
+    servedBy: outcome.model,
+    plan,
+    results: outcome.chain.map((step) => ({
+      model: step.model,
+      ok: step.error === null,
+      ms: step.ms,
+      errorCode: step.error,
+      sample: step.error === null && step.model === outcome.model ? (outcome.text ?? "").slice(0, 120) : null
+    }))
+  });
+}
+
 // server/routes/admin/[action].ts
 var ROUTES = {
   approve: handler,
@@ -695,9 +1238,11 @@ var ROUTES = {
   licenses: handler6,
   requests: handler7,
   "blob-versions": handler8,
-  "restore-blob": handler9
+  "restore-blob": handler9,
+  "ai-config": handler10,
+  "ai-test": handler11
 };
-async function handler10(req, res) {
+async function handler12(req, res) {
   const raw = req.query?.action;
   const action = Array.isArray(raw) ? raw[0] : raw;
   const route = action ? ROUTES[action] : void 0;
@@ -708,5 +1253,5 @@ async function handler10(req, res) {
   await route(req, res);
 }
 export {
-  handler10 as default
+  handler12 as default
 };

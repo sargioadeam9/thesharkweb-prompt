@@ -16,8 +16,9 @@ import { useLicense } from '../lib/license-store'
 import { signInWithGoogle, signOutSupabase } from '../lib/supabase'
 import type { AdminLicense, AdminRequests, BlobVersion } from '../lib/sync-types'
 import BrandMark from '../components/BrandMark'
+import AiSettingsPanel from './AiSettingsPanel'
 
-type Tab = 'pending' | 'licenses'
+type Tab = 'pending' | 'licenses' | 'ai'
 
 function formatDate(value: string | null): string {
   if (!value) return 'never'
@@ -234,7 +235,7 @@ export default function AdminApp() {
 
       <main className="mx-auto w-full max-w-[1000px] px-5 py-6">
         <div className="flex items-center gap-1.5">
-          {(['pending', 'licenses'] as const).map((item) => (
+          {(['pending', 'licenses', 'ai'] as const).map((item) => (
             <button
               key={item}
               type="button"
@@ -247,14 +248,14 @@ export default function AdminApp() {
                   : 'border-line bg-surface text-ink-muted hover:text-ink',
               ].join(' ')}
             >
-              {item === 'pending' ? 'Payments' : 'Licenses'}
+              {item === 'pending' ? 'Payments' : item === 'licenses' ? 'Licenses' : 'AI'}
               {item === 'pending' && requests ? ` · ${requests.pending.length}` : ''}
             </button>
           ))}
 
           <button
             type="button"
-            onClick={() => (tab === 'pending' ? reloadRequests() : reloadLicenses())}
+            onClick={() => (tab === 'pending' ? reloadRequests() : tab === 'licenses' ? reloadLicenses() : undefined)}
             aria-label="Reload"
             className="ml-auto grid size-8 place-items-center rounded-lg border border-line bg-surface text-ink-muted transition-colors hover:text-ink"
           >
@@ -269,7 +270,9 @@ export default function AdminApp() {
           </div>
         ) : null}
 
-        {tab === 'pending' ? (
+        {tab === 'ai' ? (
+          <AiSettingsPanel />
+        ) : tab === 'pending' ? (
           <section className="mt-4 space-y-2">
             {requests === null ? (
               <div className="h-24 animate-pulse rounded-xl border border-line bg-surface/60" />

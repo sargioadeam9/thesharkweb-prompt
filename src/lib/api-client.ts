@@ -8,6 +8,7 @@ import type {
   Plan,
   Result,
 } from './sync-types'
+import type { AiAdminConfig, AiTestResult } from './ai-types'
 
 export type { Result }
 
@@ -155,6 +156,29 @@ export async function adminRestoreBlob(
     method: 'POST',
     body: { uid, version },
   })
+}
+
+export async function adminAiConfig(): Promise<Result<AiAdminConfig>> {
+  return request<AiAdminConfig>('/api/admin/ai-config', { method: 'GET' })
+}
+
+export async function adminSaveAiConfig(
+  input: Partial<AiAdminConfig> & { apiKey?: string },
+): Promise<Result<{ ok: boolean; maskedKey: string }>> {
+  return request<{ ok: boolean; maskedKey: string }>('/api/admin/ai-config', {
+    method: 'POST',
+    body: input,
+  })
+}
+
+export async function adminTestAi(input: {
+  baseUrl: string
+  model: string
+  apiKey?: string
+  plan: string
+  planModels?: Record<string, string[]>
+}): Promise<Result<AiTestResult>> {
+  return request<AiTestResult>('/api/admin/ai-test', { method: 'POST', body: input })
 }
 
 export async function apiGetSync(): Promise<

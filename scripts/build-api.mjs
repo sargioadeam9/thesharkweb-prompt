@@ -13,6 +13,8 @@ const entries = [
   'server/routes/sync.ts',
   'server/routes/payments/request.ts',
   'server/routes/admin/[action].ts',
+  'server/routes/ai/run.ts',
+  'server/routes/ai/status.ts',
 ]
 
 await build({

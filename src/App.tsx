@@ -15,6 +15,7 @@ import FaqPanel from './components/FaqPanel'
 import EmptyState from './components/Panels/EmptyState'
 import PlaceholderPanel from './components/Panels/PlaceholderPanel'
 import ProGate from './components/Panels/ProGate'
+import AiToolPanel from './components/ai/AiToolPanel'
 import RecentPanel from './components/RecentPanel'
 import SettingsPanel from './components/SettingsPanel'
 import TagsPanel from './components/TagsPanel'
@@ -429,29 +430,19 @@ function App() {
               <ProGate
                 gate="soft"
                 title="Prompt Enhancer"
-                description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
+                description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল।"
                 onUpgrade={() => changeView('sync')}
               >
-                <PlaceholderPanel
-                  icon={Library}
-                  title="Prompt Enhancer is on the way."
-                  description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
-                  badge="pro"
-                />
+                <AiToolPanel mode="enhance" onNavigate={(target) => changeView(target)} />
               </ProGate>
             ) : activeView === 'generator' ? (
               <ProGate
                 gate="soft"
                 title="Prompt Generator"
-                description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
+                description="AI দিয়ে নতুন প্রম্পট লেখার টুল।"
                 onUpgrade={() => changeView('sync')}
               >
-                <PlaceholderPanel
-                  icon={Library}
-                  title="Prompt Generator is on the way."
-                  description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল শীঘ্রই আসছে।"
-                  badge="pro"
-                />
+                <AiToolPanel mode="generate" onNavigate={(target) => changeView(target)} />
               </ProGate>
             ) : (
               <>

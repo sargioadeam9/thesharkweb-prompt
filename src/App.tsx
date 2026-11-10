@@ -76,10 +76,10 @@ function App() {
   // Without this the library looks empty until the other tab is closed.
   useEffect(() => {
     function onBlocked() {
-      toast.error('নতুন ভার্সন এসেছে', {
+      toast.error('A new version is ready', {
         duration: 12000,
         description:
-          'ট্যাব বন্ধ করে আবার ঢুকুন, পেজটা নিজেই আপডেট হয়ে যাবে। আপনার প্রম্পট আর টাস্ক কিছুই মুছবে না।',
+          'Close this tab and open it again to update. Your prompts and tasks will not be lost.',
       })
     }
 
@@ -415,7 +415,7 @@ function App() {
               <ProGate
                 gate="hard"
                 title="Prompt Enhancer"
-                description="এই টুলটা যেকোনো প্যাকেজ কেনার সাথে খোলে।"
+                description="This tool unlocks when you buy any package."
                 onUpgrade={() => changeView('sync')}
               >
                 <AiToolPanel mode="enhance" onNavigate={(target) => changeView(target)} />
@@ -424,7 +424,7 @@ function App() {
               <ProGate
                 gate="hard"
                 title="Prompt Generator"
-                description="এই টুলটা যেকোনো প্যাকেজ কেনার সাথে খোলে।"
+                description="This tool unlocks when you buy any package."
                 onUpgrade={() => changeView('sync')}
               >
                 <AiToolPanel mode="generate" onNavigate={(target) => changeView(target)} />

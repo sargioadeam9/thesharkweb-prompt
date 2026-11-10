@@ -12,14 +12,14 @@ const COPY = {
   enhance: {
     icon: WandSparkles,
     title: 'Prompt Enhancer',
-    hint: 'আপনার প্রম্পট লিখুন — AI এটাকে আরও পরিষ্কার ও শক্তিশালী করে দেবে।',
-    placeholder: 'আপনার প্রম্পট এখানে লিখুন…',
+    hint: 'Write your prompt below. AI will make it clearer and stronger.',
+    placeholder: 'Type your prompt here...',
   },
   generate: {
     icon: Sparkles,
     title: 'Prompt Generator',
-    hint: 'কী চান সংক্ষেপে লিখুন — AI পুরো প্রম্পট লিখে দেবে।',
-    placeholder: 'আপনি কী করতে চান লিখুন…',
+    hint: 'Describe what you want in a few words. AI will write the full prompt.',
+    placeholder: 'What do you want to do?',
   },
 } as const
 
@@ -83,9 +83,9 @@ export default function AiToolPanel({
       const code = result.code
 
       if (code === 'pro_required') {
-        toast.error('এই টুলটা যেকোনো প্যাকেজ কেনার সাথে খোলে।', {
+        toast.error('This tool unlocks when you buy any package.', {
           action: {
-            label: 'প্যাকেজ দেখুন',
+            label: 'See packages',
             onClick: () => onNavigate?.('sync'),
           },
         })
@@ -97,10 +97,10 @@ export default function AiToolPanel({
 
       if (code === 'quota_exhausted') {
         const free = (status?.plan ?? 'free') === 'free'
-        toast.error('এই মাসের AI ব্যবহার শেষ।', {
+        toast.error('You have used up this month\u2019s AI allowance.', {
           action: free
             ? {
-                label: 'Pro নিন',
+                label: 'Get Pro',
                 onClick: () => onNavigate?.('sync'),
               }
             : undefined,
@@ -110,11 +110,11 @@ export default function AiToolPanel({
       }
 
       if (code === 'ai_unavailable' || code === 'ai_misconfigured') {
-        toast.error('AI টুল এখনো চালু করা হয়নি।')
+        toast.error('AI tools are not set up yet. The owner needs to finish the AI settings.')
         return
       }
 
-      toast.error('AI কাজ করেনি। আবার চেষ্টা করুন।')
+      toast.error('That did not work. Please try again.')
       return
     }
 
@@ -144,7 +144,7 @@ export default function AiToolPanel({
   async function handleCopy() {
     const ok = await copyText(output)
     if (!ok) {
-      toast.error('কপি করা যায়নি।')
+      toast.error('Could not copy. Please try again.')
       return
     }
     setCopied(true)
@@ -186,7 +186,7 @@ export default function AiToolPanel({
             disabled={busy || !input.trim() || exhausted}
             className="inline-flex h-9 shrink-0 items-center rounded-lg bg-brand px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
           >
-            {busy ? 'চলছে…' : 'Run'}
+            {busy ? 'Working...' : 'Run'}
           </button>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function AiToolPanel({
               ) : (
                 <Copy className="size-4" strokeWidth={1.75} aria-hidden="true" />
               )}
-              {copied ? 'কপি হয়েছে' : 'Copy'}
+              {copied ? 'Copied' : 'Copy'}
             </button>
 
             <button
@@ -239,10 +239,10 @@ export default function AiToolPanel({
         >
           <div className="w-full max-w-[380px] rounded-2xl border border-line bg-surface p-5 shadow-lg">
             <h3 id="ai-consent-title" className="text-[15px] font-semibold tracking-[-0.02em]">
-              নিশ্চিত করুন
+              Confirm
             </h3>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
-              এই প্রম্পটটা AI সার্ভিসে পাঠানো হবে।
+              This prompt will be sent to the AI service.
             </p>
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
@@ -250,14 +250,14 @@ export default function AiToolPanel({
                 onClick={() => setAskConsent(false)}
                 className="h-9 rounded-lg border border-line px-3.5 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
               >
-                বাতিল
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={acceptConsent}
                 className="h-9 rounded-lg bg-brand px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-deep"
               >
-                পাঠান
+                Send
               </button>
             </div>
           </div>

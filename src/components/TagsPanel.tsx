@@ -107,13 +107,13 @@ export default function TagsPanel({
 
     const next = draft.trim()
     if (!next) {
-      toast.error('ট্যাগের নাম খালি রাখা যাবে না')
+      toast.error('A tag name cannot be empty')
       return
     }
 
     const key = tagKey(activeTag.name)
     if (tagKey(next) === key && next === activeTag.name) {
-      toast.info('নাম আগের মতোই আছে')
+      toast.info('That is already the name')
       return
     }
 
@@ -141,10 +141,10 @@ export default function TagsPanel({
       setSelected(next)
       setDraft(next)
       toast.success(
-        `${affected.length}টি প্রম্পটে ট্যাগের নাম "${next}" করা হয়েছে`,
+        `Renamed the tag to "${next}" on ${affected.length} prompt${affected.length === 1 ? '' : 's'}`,
       )
     } catch {
-      toast.error('ট্যাগের নাম বদলানো যায়নি')
+      toast.error('Could not rename the tag')
     } finally {
       setBusy(false)
     }
@@ -172,7 +172,7 @@ export default function TagsPanel({
       }
 
       clearSelection()
-      toast.success(`${affected.length}টি প্রম্পট থেকে ট্যাগ মুছে ফেলা হয়েছে`, {
+      toast.success(`Removed the tag from ${affected.length} prompt${affected.length === 1 ? '' : 's'}`, {
         action: {
           label: 'Undo',
           onClick: () => {
@@ -181,16 +181,16 @@ export default function TagsPanel({
                 for (const entry of snapshot) {
                   await repo.updatePrompt(entry.id, { tags: entry.tags })
                 }
-                toast.success('ট্যাগ ফিরিয়ে আনা হয়েছে')
+                toast.success('Tag restored')
               } catch {
-                toast.error('ফিরিয়ে আনা যায়নি')
+                toast.error('Could not restore the tag')
               }
             })()
           },
         },
       })
     } catch {
-      toast.error('ট্যাগ মুছে ফেলা যায়নি')
+      toast.error('Could not delete the tag')
     } finally {
       setBusy(false)
     }

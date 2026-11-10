@@ -179,7 +179,7 @@ export default function AiSettingsPanel() {
 
     setMaskedKey(result.data.maskedKey)
     patch({ apiKey: '' })
-    toast.success('AI সেটিংস সেভ হয়েছে।')
+    toast.success('AI settings saved.')
   }
 
   async function handleTest() {
@@ -210,9 +210,9 @@ export default function AiSettingsPanel() {
 
     setTestResult(result.data)
     if (result.data.ok) {
-      toast.success('কানেকশন কাজ করছে।')
+      toast.success('Connection is working.')
     } else {
-      toast.error('কোনো মডেল উত্তর দেয়নি।')
+      toast.error('No model answered. Check the model IDs and the API key.')
     }
   }
 
@@ -434,7 +434,7 @@ export default function AiSettingsPanel() {
       <div className="rounded-xl border border-line bg-surface p-4">
         <p className="text-[12px] font-semibold text-ink">Per-plan model chains &amp; limits</p>
         <p className="mt-0.5 text-[11px] text-ink-muted">
-          Model ID provider-এর catalog থেকে হুবহু বসান — ভুল হলে চেইন পরের মডেলে চলে যাবে।
+          Paste the model ID exactly as the provider lists it. If it is wrong, the chain moves to the next model.
         </p>
 
         <div className="mt-3 space-y-2">

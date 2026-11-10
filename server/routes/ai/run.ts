@@ -2,10 +2,10 @@ import type { Req, Res, LicenseRow } from '../../guards'
 import { licenseState, limited, requireUser } from '../../guards'
 import { getServiceClient } from '../../supabase'
 import {
-  DEFAULT_SYSTEM_PROMPT,
   chainForPlan,
   currentPeriod,
   estimateCostUsd,
+  getSystemPrompt,
   limitForPlan,
   loadAiConfig,
   logAiCall,
@@ -139,13 +139,20 @@ export default async function handler(req: Req, res: Res) {
   const deadline = Date.now() + budget
   const startedAt = Date.now()
 
+  const aiMode = mode as AiMode
+  const systemPrompt = getSystemPrompt(aiMode, config.system_prompt)
+  const formattedInput =
+    aiMode === 'enhance'
+      ? `Enhance this draft prompt into a professional, highly effective prompt:\n\n"""\n${input}\n"""`
+      : `Generate a comprehensive, production-ready prompt based on this goal:\n\n"""\n${input}\n"""`
+
   const outcome = await runChain({
     config,
     apiKey: config.api_key,
     baseUrl: config.base_url,
     chain,
-    systemPrompt: config.system_prompt || DEFAULT_SYSTEM_PROMPT,
-    input,
+    systemPrompt,
+    input: formattedInput,
     deadline,
   })
 

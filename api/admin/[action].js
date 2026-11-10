@@ -686,7 +686,24 @@ async function handler9(req, res) {
 }
 
 // server/ai.ts
-var DEFAULT_SYSTEM_PROMPT = "You are a prompt engineering assistant. Reply with the finished prompt text only. No preamble, no explanation, no markdown fences.";
+var DEFAULT_ENHANCE_SYSTEM_PROMPT = `You are an expert prompt engineer. Your sole task is to take the user's draft prompt and transform it into a powerful, clear, highly structured, production-grade prompt.
+
+Guidelines for enhancing the prompt:
+1. Clarify the core objective and assign an expert persona/role appropriate for the task.
+2. Structure the prompt into logical sections (e.g., Role/Persona, Context, Task Instructions, Constraints & Rules, and Output Format).
+3. Identify ambiguous or missing details and turn them into explicit parameters or bracketed placeholders like [TOPIC], [AUDIENCE], or [FORMAT].
+4. Add negative constraints (what the AI must NOT do, e.g. no conversational filler, no hallucinations, strict adherence to formatting).
+5. Preserve the user's original intent\u2014do not invent an unrelated task.
+6. Output ONLY the finalized prompt ready to be used. Do NOT include introductory text (like "Here is your enhanced prompt:"), explanations, or surrounding markdown fences (\`\`\`).`;
+var DEFAULT_SYSTEM_PROMPT = DEFAULT_ENHANCE_SYSTEM_PROMPT;
+function stripWrapperFences(text) {
+  let cleaned = text.trim();
+  const fenceMatch = cleaned.match(/^```(?:markdown|text|prompt)?\s*\n([\s\S]*?)\n```$/i);
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim();
+  }
+  return cleaned;
+}
 async function loadAiConfig() {
   const supabase = getServiceClient();
   const { data, error } = await supabase.from("ai_config").select("*").eq("id", "app").maybeSingle();
@@ -925,7 +942,7 @@ async function runChain(args) {
       tokensOut = attempt.tokensOut;
       return {
         ok: true,
-        text: attempt.text,
+        text: stripWrapperFences(attempt.text),
         model,
         chain: steps,
         tokensIn,

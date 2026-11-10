@@ -213,7 +213,44 @@ function licenseState(row) {
 }
 
 // server/ai.ts
-var DEFAULT_SYSTEM_PROMPT = "You are a prompt engineering assistant. Reply with the finished prompt text only. No preamble, no explanation, no markdown fences.";
+var DEFAULT_ENHANCE_SYSTEM_PROMPT = `You are an expert prompt engineer. Your sole task is to take the user's draft prompt and transform it into a powerful, clear, highly structured, production-grade prompt.
+
+Guidelines for enhancing the prompt:
+1. Clarify the core objective and assign an expert persona/role appropriate for the task.
+2. Structure the prompt into logical sections (e.g., Role/Persona, Context, Task Instructions, Constraints & Rules, and Output Format).
+3. Identify ambiguous or missing details and turn them into explicit parameters or bracketed placeholders like [TOPIC], [AUDIENCE], or [FORMAT].
+4. Add negative constraints (what the AI must NOT do, e.g. no conversational filler, no hallucinations, strict adherence to formatting).
+5. Preserve the user's original intent\u2014do not invent an unrelated task.
+6. Output ONLY the finalized prompt ready to be used. Do NOT include introductory text (like "Here is your enhanced prompt:"), explanations, or surrounding markdown fences (\`\`\`).`;
+var DEFAULT_GENERATE_SYSTEM_PROMPT = `You are a master prompt engineer. Your task is to take a brief idea, goal, or topic from the user and generate a complete, professional, comprehensive prompt that can be used directly with modern LLMs (ChatGPT, Claude, etc.).
+
+Guidelines for generating the prompt:
+1. Establish a specific, authoritative Role/Persona for the AI to adopt.
+2. Provide rich Context explaining the background and purpose of the request.
+3. Detail step-by-step instructions for executing the task flawlessly.
+4. Set explicit Constraints, guidelines on tone, style, depth, and boundary conditions.
+5. Specify the exact Output Format (e.g., Markdown headers, structured bullet points, code blocks, or templates).
+6. Use clear bracketed placeholders (like [INSERT YOUR DATA HERE]) wherever the end user needs to supply specific details.
+7. Output ONLY the generated prompt text. Do NOT include preambles, conversational filler, or wrap the whole response in code fences.`;
+var DEFAULT_SYSTEM_PROMPT = DEFAULT_ENHANCE_SYSTEM_PROMPT;
+function getSystemPrompt(mode, adminCustomPrompt) {
+  const base = mode === "enhance" ? DEFAULT_ENHANCE_SYSTEM_PROMPT : DEFAULT_GENERATE_SYSTEM_PROMPT;
+  if (adminCustomPrompt && adminCustomPrompt.trim()) {
+    return `${base}
+
+Additional Administrator Instructions:
+${adminCustomPrompt.trim()}`;
+  }
+  return base;
+}
+function stripWrapperFences(text) {
+  let cleaned = text.trim();
+  const fenceMatch = cleaned.match(/^```(?:markdown|text|prompt)?\s*\n([\s\S]*?)\n```$/i);
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim();
+  }
+  return cleaned;
+}
 function currentPeriod(now = /* @__PURE__ */ new Date()) {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 }
@@ -475,7 +512,7 @@ async function runChain(args) {
       tokensOut = attempt.tokensOut;
       return {
         ok: true,
-        text: attempt.text,
+        text: stripWrapperFences(attempt.text),
         model,
         chain: steps,
         tokensIn,
@@ -615,13 +652,24 @@ async function handler(req, res) {
   const budget = Number(config.total_budget_ms) || 45e3;
   const deadline = Date.now() + budget;
   const startedAt = Date.now();
+  const aiMode = mode;
+  const systemPrompt = getSystemPrompt(aiMode, config.system_prompt);
+  const formattedInput = aiMode === "enhance" ? `Enhance this draft prompt into a professional, highly effective prompt:
+
+"""
+${input}
+"""` : `Generate a comprehensive, production-ready prompt based on this goal:
+
+"""
+${input}
+"""`;
   const outcome = await runChain({
     config,
     apiKey: config.api_key,
     baseUrl: config.base_url,
     chain,
-    systemPrompt: config.system_prompt || DEFAULT_SYSTEM_PROMPT,
-    input,
+    systemPrompt,
+    input: formattedInput,
     deadline
   });
   const ms = Date.now() - startedAt;

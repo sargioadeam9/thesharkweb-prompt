@@ -16,12 +16,17 @@ function start(): void {
         return
       }
 
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange((event, session) => {
         const user = session?.user ?? null
         setLicenseState({ user })
 
         if (session) {
-          void refreshLicense()
+          // Supabase re-emits SIGNED_IN and TOKEN_REFRESHED every time the tab
+          // becomes visible again, so this fires on every tab switch. Refresh
+          // silently once we already hold a license, otherwise the whole admin
+          // page drops back to its loading state each time the user returns.
+          const background = event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN'
+          void refreshLicense({ silent: background })
         } else {
           setLicenseState({ license: null, loading: false })
         }

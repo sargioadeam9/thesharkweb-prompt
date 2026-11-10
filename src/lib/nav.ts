@@ -1,6 +1,5 @@
 import {
   Archive,
-  BarChart3,
   Database,
   FolderOpen,
   HelpCircle,
@@ -35,7 +34,6 @@ export type View =
   | 'archived'
   | 'enhancer'
   | 'generator'
-  | 'analytics'
   | 'settings'
   | string
 
@@ -82,7 +80,6 @@ export const NAV_GROUPS: NavGroup[] = [
     entries: [
       { key: 'enhancer', label: 'Prompt Enhancer', icon: WandSparkles, status: 'live', gate: 'hard', hideHeaderControls: true, hideNewPrompt: true },
       { key: 'generator', label: 'Prompt Generator', icon: Sparkles, status: 'live', gate: 'hard', hideHeaderControls: true, hideNewPrompt: true },
-      { key: 'analytics', label: 'Analytics', icon: BarChart3, status: 'soon', gate: 'hard', hideHeaderControls: true, hideNewPrompt: true },
     ],
   },
   {
@@ -120,7 +117,6 @@ const TITLE_MAP: Partial<Record<string, string>> = {
   archived: 'Archived',
   enhancer: 'Prompt Enhancer',
   generator: 'Prompt Generator',
-  analytics: 'Analytics',
   settings: 'Settings',
 }
 

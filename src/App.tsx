@@ -13,7 +13,6 @@ import DashboardPanel from './components/DashboardPanel'
 import TemplatesPanel from './components/TemplatesPanel'
 import FaqPanel from './components/FaqPanel'
 import EmptyState from './components/Panels/EmptyState'
-import PlaceholderPanel from './components/Panels/PlaceholderPanel'
 import ProGate from './components/Panels/ProGate'
 import AiToolPanel from './components/ai/AiToolPanel'
 import RecentPanel from './components/RecentPanel'
@@ -412,20 +411,6 @@ function App() {
                 settings={settings}
                 onUpdate={(patch) => repo.updateSettings(patch)}
               />
-            ) : activeView === 'analytics' ? (
-              <ProGate
-               gate="hard"
-               title="Analytics"
-                description="এই ফিচারটা Pro প্ল্যানের সাথে খোলে।"
-                onUpgrade={() => changeView('sync')}
-              >
-                <PlaceholderPanel
-                  icon={Library}
-                  title="Analytics is on the way."
-                  description="এই অংশটা এখনো বানানো হচ্ছে। আপনার সব প্রম্পট এখন All Prompts-এ পাবেন।"
-                  badge="pro"
-                />
-              </ProGate>
             ) : activeView === 'enhancer' ? (
               <ProGate
                 gate="hard"

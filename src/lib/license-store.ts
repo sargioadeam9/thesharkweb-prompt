@@ -47,14 +47,21 @@ export function setLicenseState(
   emitChange()
 }
 
-export async function refreshLicense(): Promise<void> {
+export async function refreshLicense(options: { silent?: boolean } = {}): Promise<void> {
   const token = await getAccessToken()
   if (!token) {
     setLicenseState({ license: null, loading: false })
     return
   }
 
-  setLicenseState({ loading: true })
+  // A background refresh (tab focus, token rotation) must not flip the app back
+  // into its loading state: that unmounts the current screen and shows the
+  // full-page "Loading…" spinner on every tab switch. Only the first load, when
+  // there is nothing to show yet, is allowed to set loading true.
+  const silent = options.silent ?? state.license !== null
+  if (!silent) {
+    setLicenseState({ loading: true })
+  }
 
   try {
     const res = await fetch('/api/license', {

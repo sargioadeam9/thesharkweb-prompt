@@ -911,7 +911,7 @@ async function runChain(args) {
       model,
       messages,
       temperature: Number.isFinite(temperature) ? temperature : 0.4,
-      maxTokens: Number.isFinite(maxTokens) ? maxTokens : 800,
+      maxTokens: Number.isFinite(maxTokens) ? maxTokens : 2500,
       timeoutMs,
       minimal: false
     });
@@ -924,7 +924,7 @@ async function runChain(args) {
           model,
           messages,
           temperature: 0.4,
-          maxTokens: 800,
+          maxTokens: 2500,
           timeoutMs: Math.min(perCallTimeout, left),
           minimal: true
         });
@@ -1035,7 +1035,7 @@ async function handler10(req, res) {
         maskedKey: "",
         systemPrompt: "",
         temperature: 0.4,
-        maxTokens: 800,
+        maxTokens: 2500,
         request_timeout_ms: 25e3,
         total_budget_ms: 45e3,
         max_attempts: 3,
@@ -1055,7 +1055,7 @@ async function handler10(req, res) {
       maskedKey: maskKey(row.api_key),
       systemPrompt: row.system_prompt ?? "",
       temperature: Number(row.temperature ?? 0.4),
-      maxTokens: Number(row.max_tokens ?? 800),
+      maxTokens: Number(row.max_tokens ?? 2500),
       request_timeout_ms: Number(row.request_timeout_ms ?? 25e3),
       total_budget_ms: Number(row.total_budget_ms ?? 45e3),
       max_attempts: Number(row.max_attempts ?? 3),
@@ -1114,7 +1114,7 @@ async function handler10(req, res) {
     api_key: apiKey,
     system_prompt: systemPrompt,
     temperature: Math.min(2, Math.max(0, asNumber(body.temperature, 0.4))),
-    max_tokens: Math.max(1, Math.trunc(asNumber(body.maxTokens, 800))),
+    max_tokens: Math.max(1, Math.trunc(asNumber(body.maxTokens, 2500))),
     request_timeout_ms: Math.max(1e3, Math.trunc(asNumber(body.request_timeout_ms, 25e3))),
     total_budget_ms: Math.max(1e3, Math.trunc(asNumber(body.total_budget_ms, 45e3))),
     max_attempts: Math.min(6, Math.max(1, Math.trunc(asNumber(body.max_attempts, 3)))),
@@ -1198,7 +1198,7 @@ async function handler11(req, res) {
     api_key: apiKey,
     system_prompt: saved?.system_prompt ?? null,
     temperature: saved?.temperature ?? 0.4,
-    max_tokens: saved?.max_tokens ?? 800,
+    max_tokens: saved?.max_tokens ?? 2500,
     request_timeout_ms: saved?.request_timeout_ms ?? 25e3,
     total_budget_ms: saved?.total_budget_ms ?? 45e3,
     max_attempts: saved?.max_attempts ?? 3,

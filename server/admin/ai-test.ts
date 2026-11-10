@@ -72,7 +72,7 @@ export default async function handler(req: Req, res: Res) {
     api_key: apiKey,
     system_prompt: saved?.system_prompt ?? null,
     temperature: saved?.temperature ?? 0.4,
-    max_tokens: saved?.max_tokens ?? 800,
+    max_tokens: saved?.max_tokens ?? 2500,
     request_timeout_ms: saved?.request_timeout_ms ?? 25000,
     total_budget_ms: saved?.total_budget_ms ?? 45000,
     max_attempts: saved?.max_attempts ?? 3,

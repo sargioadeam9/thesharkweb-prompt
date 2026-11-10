@@ -433,7 +433,7 @@ export async function runChain(args: {
       model,
       messages,
       temperature: Number.isFinite(temperature) ? temperature : 0.4,
-      maxTokens: Number.isFinite(maxTokens) ? maxTokens : 800,
+      maxTokens: Number.isFinite(maxTokens) ? maxTokens : 2500,
       timeoutMs,
       minimal: false,
     })
@@ -448,7 +448,7 @@ export async function runChain(args: {
           model,
           messages,
           temperature: 0.4,
-          maxTokens: 800,
+          maxTokens: 2500,
           timeoutMs: Math.min(perCallTimeout, left),
           minimal: true,
         })

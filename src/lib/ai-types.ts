@@ -2,7 +2,7 @@ export type AiMode = 'enhance' | 'generate'
 
 export type AiStatus = {
   available: boolean
-  reason: null | 'ai_unavailable' | 'quota_exhausted'
+  reason: null | 'ai_unavailable' | 'quota_exhausted' | 'pro_required'
   plan: string
   used: number
   limit: number | null

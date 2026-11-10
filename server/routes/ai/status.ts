@@ -29,7 +29,21 @@ export default async function handler(req: Req, res: Res) {
 
   const licenseRow = (rawLicense as LicenseRow | null) ?? null
   const state = licenseState(licenseRow)
-  const plan = state.active && licenseRow ? licenseRow.plan : 'free'
+
+  // AI Tools are package-locked, so a free account has nothing to report on.
+  if (!state.active || !licenseRow) {
+    res.status(200).json({
+      available: false,
+      reason: 'pro_required',
+      plan: 'free',
+      used: 0,
+      limit: null,
+      period: currentPeriod(),
+    })
+    return
+  }
+
+  const plan = licenseRow.plan
 
   const period = currentPeriod()
   const { data: usageRow } = await supabase

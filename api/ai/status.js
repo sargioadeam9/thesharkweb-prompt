@@ -279,7 +279,18 @@ async function handler(req, res) {
   const { data: rawLicense } = await supabase.from("licenses").select("*").eq("user_id", user.id).maybeSingle();
   const licenseRow = rawLicense ?? null;
   const state = licenseState(licenseRow);
-  const plan = state.active && licenseRow ? licenseRow.plan : "free";
+  if (!state.active || !licenseRow) {
+    res.status(200).json({
+      available: false,
+      reason: "pro_required",
+      plan: "free",
+      used: 0,
+      limit: null,
+      period: currentPeriod()
+    });
+    return;
+  }
+  const plan = licenseRow.plan;
   const period = currentPeriod();
   const { data: usageRow } = await supabase.from("ai_usage").select("calls").eq("user_id", user.id).eq("period", period).maybeSingle();
   const used = usageRow?.calls ?? 0;

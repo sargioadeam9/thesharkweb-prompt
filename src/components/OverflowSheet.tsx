@@ -175,7 +175,7 @@ export default function OverflowSheet({
                       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
                       Current
                     </span>
-                  ) : item.gate ? (
+                  ) : item.gate === 'hard' ? (
                     <span className="ml-auto flex items-center gap-1">
                       {locked ? (
                         <Lock className="size-3 text-ink-faint" strokeWidth={2} aria-hidden="true" />

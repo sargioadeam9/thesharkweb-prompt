@@ -557,7 +557,11 @@ async function handler(req, res) {
   const { data: rawLicense } = await supabase.from("licenses").select("*").eq("user_id", user.id).maybeSingle();
   const licenseRow = rawLicense ?? null;
   const state = licenseState(licenseRow);
-  const plan = state.active && licenseRow ? licenseRow.plan : "free";
+  if (!state.active || !licenseRow) {
+    res.status(403).json({ ok: false, error: "pro_required" });
+    return;
+  }
+  const plan = licenseRow.plan;
   const config = await loadAiConfig();
   if (!config || !config.enabled) {
     res.status(503).json({ ok: false, error: "ai_unavailable" });

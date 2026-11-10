@@ -82,6 +82,19 @@ export default function AiToolPanel({
     if (!result.ok) {
       const code = result.code
 
+      if (code === 'pro_required') {
+        toast.error('এই টুলটা যেকোনো প্যাকেজ কেনার সাথে খোলে।', {
+          action: {
+            label: 'প্যাকেজ দেখুন',
+            onClick: () => onNavigate?.('sync'),
+          },
+        })
+        setStatus((prev) =>
+          prev ? { ...prev, available: false, reason: 'pro_required' } : prev,
+        )
+        return
+      }
+
       if (code === 'quota_exhausted') {
         const free = (status?.plan ?? 'free') === 'free'
         toast.error('এই মাসের AI ব্যবহার শেষ।', {

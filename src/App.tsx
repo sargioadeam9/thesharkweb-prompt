@@ -428,18 +428,18 @@ function App() {
               </ProGate>
             ) : activeView === 'enhancer' ? (
               <ProGate
-                gate="soft"
+                gate="hard"
                 title="Prompt Enhancer"
-                description="AI দিয়ে প্রম্পট লেখা ও উন্নত করার টুল।"
+                description="এই টুলটা যেকোনো প্যাকেজ কেনার সাথে খোলে।"
                 onUpgrade={() => changeView('sync')}
               >
                 <AiToolPanel mode="enhance" onNavigate={(target) => changeView(target)} />
               </ProGate>
             ) : activeView === 'generator' ? (
               <ProGate
-                gate="soft"
+                gate="hard"
                 title="Prompt Generator"
-                description="AI দিয়ে নতুন প্রম্পট লেখার টুল।"
+                description="এই টুলটা যেকোনো প্যাকেজ কেনার সাথে খোলে।"
                 onUpgrade={() => changeView('sync')}
               >
                 <AiToolPanel mode="generate" onNavigate={(target) => changeView(target)} />

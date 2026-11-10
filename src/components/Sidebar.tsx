@@ -49,8 +49,8 @@ function NavBadge({
   const locked =
     entry.gate === 'hard' && !loading && gateState(entry.gate, license, loading) === 'upsell'
 
-  // Only a hard gate is actually Pro-only. AI Tools are soft-gated: free users
-  // get a monthly allowance, so a "Pro" badge there would be wrong.
+  // Every gated entry is Pro-only: AI Tools, Analytics and Cloud Sync all
+  // require an active package, so they all show the lock and the Pro pill.
   if (entry.gate === 'hard') {
     return (
       <span className="flex shrink-0 items-center gap-1">

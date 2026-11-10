@@ -462,7 +462,7 @@ export default function AiSettingsPanel() {
           ))}
         </div>
         <p className="mt-2 text-[10px] text-ink-faint">
-          Chain order = priority. Limit blank = unlimited, 0 = blocked. Free defaults to 3 calls/month.
+          Chain order = priority. Limit blank = unlimited, 0 = blocked. AI Tools need an active package; the free plan is blocked server-side.
         </p>
       </div>
 

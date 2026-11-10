@@ -54,7 +54,15 @@ export default async function handler(req: Req, res: Res) {
 
   const licenseRow = (rawLicense as LicenseRow | null) ?? null
   const state = licenseState(licenseRow)
-  const plan = state.active && licenseRow ? licenseRow.plan : 'free'
+
+  // AI Tools are package-locked: no active license means no AI calls at all,
+  // regardless of what plan_limits says for the free plan.
+  if (!state.active || !licenseRow) {
+    res.status(403).json({ ok: false, error: 'pro_required' })
+    return
+  }
+
+  const plan = licenseRow.plan
 
   // 4. config must exist and be enabled
   const config = await loadAiConfig()

@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { View } from './Sidebar'
 import type { Gate, NavStatus } from '../lib/nav'
 import { useProAccess, gateState } from '../lib/entitlement'
+import AccountChip from './AccountChip'
 
 export type OverflowItem = {
   key: string
@@ -196,6 +197,10 @@ export default function OverflowSheet({
             )
           })}
         </ul>
+
+        <div className="mt-2 border-t border-line pt-2">
+          <AccountChip />
+        </div>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import type { Category } from '../lib/types'
 import type { NavEntry, View } from '../lib/nav'
 import { NAV_GROUPS } from '../lib/nav'
 import { useProAccess, gateState } from '../lib/entitlement'
+import AccountChip from './AccountChip'
 import BrandMark from './BrandMark'
 
 export type { View } from '../lib/nav'
@@ -251,6 +252,8 @@ export default function Sidebar({
       </nav>
 
       <div className="shrink-0 border-t border-line px-3 py-3">
+        <AccountChip />
+
         <button
           type="button"
           onClick={() => onSelect('about')}

@@ -160,6 +160,7 @@ export default function SyncPanel() {
     try {
       await signOutSupabase()
       await refreshLicense()
+      toast.success('Signed out. Your prompts stay in this browser.')
     } catch {
       toast.error('Could not sign out')
     } finally {
@@ -473,8 +474,20 @@ export default function SyncPanel() {
         ) : null}
       </div>
 
-      {!chosen && user?.email ? (
-        <p className="mt-4 text-center text-[11px] text-ink-faint">Signed in as {user.email}</p>
+      {!chosen && user?.email && status !== 'active' ? (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-ink-faint">
+          <span>Signed in as {user.email}</span>
+          <span aria-hidden="true">·</span>
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            disabled={busy}
+            className="inline-flex items-center gap-1 font-medium text-ink-muted underline underline-offset-2 transition-colors hover:text-ink hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
+          >
+            <LogOut className="size-3" strokeWidth={1.75} aria-hidden="true" />
+            Sign out
+          </button>
+        </div>
       ) : null}
     </div>
   )

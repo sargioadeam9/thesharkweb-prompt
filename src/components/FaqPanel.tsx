@@ -132,7 +132,7 @@ export default function FaqPanel() {
 
       <div className="mt-7 flex flex-col items-center gap-3">
         <a
-          href="https://sharkweb-main-2026-frontend.vercel.app/"
+          href="https://thesharkweb.com"
           target="_blank"
           rel="noopener noreferrer"
           className="faq-cta inline-flex h-10 items-center gap-2 rounded-full bg-brand px-4 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"

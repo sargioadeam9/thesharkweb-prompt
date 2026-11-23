@@ -67,37 +67,44 @@ export default function TemplatesPanel({ onNewFromTemplate }: TemplatesPanelProp
       </div>
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div
-          role="group"
-          aria-label="Filter templates by category"
-          className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <button
-            type="button"
-            onClick={() => setCategory(null)}
-            aria-pressed={category === null}
-            className={chipClass(category === null)}
+        <div className="relative min-w-0 flex-1">
+          <div
+            role="group"
+            aria-label="Filter templates by category"
+            className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            All
-            <span className="tabular-nums opacity-60">{TEMPLATES.length}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setCategory(null)}
+              aria-pressed={category === null}
+              className={chipClass(category === null)}
+            >
+              All
+              <span className="tabular-nums opacity-60">{TEMPLATES.length}</span>
+            </button>
 
-          {categories.map((name) => {
-            const count = TEMPLATES.filter((template) => template.category === name).length
+            {categories.map((name) => {
+              const count = TEMPLATES.filter((template) => template.category === name).length
 
-            return (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setCategory(name)}
-                aria-pressed={category === name}
-                className={chipClass(category === name)}
-              >
-                {name}
-                <span className="tabular-nums opacity-60">{count}</span>
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setCategory(name)}
+                  aria-pressed={category === name}
+                  className={chipClass(category === name)}
+                >
+                  {name}
+                  <span className="tabular-nums opacity-60">{count}</span>
+                </button>
+              )
+            })}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8"
+            style={{ background: 'linear-gradient(to left, var(--color-canvas), transparent)' }}
+          />
         </div>
 
         <label className="relative flex shrink-0 items-center sm:w-[220px]">
@@ -144,12 +151,12 @@ export default function TemplatesPanel({ onNewFromTemplate }: TemplatesPanelProp
                   <button
                     type="button"
                     onClick={() => void handleCopy(template)}
-                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-medium text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-medium whitespace-nowrap text-ink transition-colors hover:border-ink-faint/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                   >
                     {justCopied ? (
-                      <Check className="size-3.5" strokeWidth={2} aria-hidden="true" />
+                      <Check className="size-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
                     ) : (
-                      <Copy className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
+                      <Copy className="size-3.5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                     )}
                     {justCopied ? 'Copied' : 'Copy'}
                   </button>
@@ -157,9 +164,9 @@ export default function TemplatesPanel({ onNewFromTemplate }: TemplatesPanelProp
                   <button
                     type="button"
                     onClick={() => onNewFromTemplate(template)}
-                    className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 text-[12px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 text-[12px] font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                   >
-                    <Plus className="size-3.5" strokeWidth={2} aria-hidden="true" />
+                    <Plus className="size-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
                     Use as new prompt
                   </button>
                 </div>

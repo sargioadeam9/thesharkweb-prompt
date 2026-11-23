@@ -29,8 +29,8 @@ function Shortcut({ label, keys }: { label: string; keys: string }) {
 
 export default function AboutPanel({ onOpenSync }: { onOpenSync: () => void }) {
   return (
-    <div className="flex flex-1 items-center justify-center px-5 py-10 lg:px-8 lg:py-12">
-      <div className="grid w-full max-w-[820px] gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-center lg:gap-10">
+    <div className="flex flex-1 flex-col px-5 py-8 lg:px-8 lg:py-10">
+      <div className="mx-auto grid w-full max-w-[820px] gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start lg:gap-10">
         <DevelopedByCard />
 
         <div className="space-y-4">

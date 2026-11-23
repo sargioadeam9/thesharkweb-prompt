@@ -91,15 +91,23 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'faq', label: 'Help & FAQ', icon: HelpCircle, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
     ],
   },
-  {
-    label: '',
-    entries: [
-      { key: 'about', label: 'About', icon: Info, status: 'live', hideHeaderControls: true, hideNewPrompt: true },
-    ],
-  },
 ]
 
-export const NAV_FLAT: NavEntry[] = NAV_GROUPS.flatMap((group) => group.entries)
+// About lives in the sidebar footer rather than the nav list, so it is kept out
+// of NAV_GROUPS but still part of NAV_FLAT for routing and the mobile sheet.
+export const ABOUT_ENTRY: NavEntry = {
+  key: 'about',
+  label: 'About',
+  icon: Info,
+  status: 'live',
+  hideHeaderControls: true,
+  hideNewPrompt: true,
+}
+
+export const NAV_FLAT: NavEntry[] = [
+  ...NAV_GROUPS.flatMap((group) => group.entries),
+  ABOUT_ENTRY,
+]
 
 export const PRIMARY_VIEWS: View[] = NAV_FLAT.filter((entry) => !entry.action).map((entry) => entry.key)
 

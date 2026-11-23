@@ -30,8 +30,8 @@ const LINKS: CreditLink[] = [
     external: true,
   },
   {
-    label: 'www.thesharkweb.com',
-    href: 'https://sharkweb-main-2026-frontend.vercel.app/',
+    label: 'thesharkweb.com',
+    href: 'https://thesharkweb.com',
     icon: Building2,
     external: true,
   },

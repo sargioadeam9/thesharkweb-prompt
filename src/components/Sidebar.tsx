@@ -1,4 +1,4 @@
-import { Lock, Settings2 } from 'lucide-react'
+import { Info, Lock, Settings2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Category } from '../lib/types'
 import type { NavEntry, View } from '../lib/nav'
@@ -250,14 +250,23 @@ export default function Sidebar({
         ))}
       </nav>
 
-      <div className="shrink-0 border-t border-line p-3 text-center">
+      <div className="shrink-0 border-t border-line px-3 py-3">
         <button
           type="button"
           onClick={() => onSelect('about')}
           aria-current={view === 'about' ? 'page' : undefined}
-          className="text-[11px] text-ink-faint transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand rounded"
+          className={navClass(view === 'about')}
         >
-          About
+          <span className="flex min-w-0 items-center gap-2.5">
+            <Info
+              className={
+                view === 'about' ? 'size-4 shrink-0 text-brand-tint' : 'size-4 shrink-0 text-ink-faint'
+              }
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            <span className="truncate">About</span>
+          </span>
         </button>
       </div>
     </aside>

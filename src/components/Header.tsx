@@ -140,18 +140,26 @@ export default function Header({
           <span className="hidden min-w-0 truncate text-[14px] font-semibold tracking-[-0.02em] sm:block">
             TheSharkWebPrompt
           </span>
+          {/* The sort select sits in the flexible middle slot, not flush against
+              the right edge: its dropdown popup anchors to the select's left edge
+              and is as wide as the longest option, so at the edge it opened off
+              screen and clipped "Least recently updated". */}
+          {showControls ? (
+            <SortSelect
+              value={sortValue}
+              onChange={onSortChange}
+              className="min-w-0 flex-1 sm:flex-none sm:w-[176px]"
+            />
+          ) : null}
           {showNew ? (
             <button
               type="button"
               onClick={onNew}
               aria-label="New prompt"
-              className="ml-auto grid size-10 shrink-0 place-items-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className={`grid size-10 shrink-0 place-items-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${showControls ? '' : 'ml-auto'}`}
             >
               <Plus className="size-4" strokeWidth={2.25} aria-hidden="true" />
             </button>
-          ) : null}
-          {showControls ? (
-            <SortSelect value={sortValue} onChange={onSortChange} className="w-[176px] shrink-0" />
           ) : null}
         </div>
         {showControls ? (

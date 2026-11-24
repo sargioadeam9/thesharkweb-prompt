@@ -26,6 +26,7 @@ import StoragePanel from './components/StoragePanel'
 import SyncPanel from './components/SyncPanel'
 import TodoPanel from './components/TodoPanel'
 import { APP_VERSION } from './lib/app-info'
+import { installAutoSync } from './lib/auto-sync'
 import { db, ensureSeeded } from './lib/db'
 import { writeDraft } from './lib/draft'
 import { PRIMARY_VIEWS, flagsForView, titleForView } from './lib/nav'
@@ -70,6 +71,12 @@ function App() {
       console.error('Failed to open the prompt database', error)
       toast.error('Could not open the local database')
     })
+  }, [])
+
+  // Saves push themselves to the cloud from here on. The manual Sync button
+  // stays as the explicit path. Idempotent, so StrictMode is fine.
+  useEffect(() => {
+    installAutoSync()
   }, [])
 
   // A newer schema cannot upgrade while an older tab still holds the database.

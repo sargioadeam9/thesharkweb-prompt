@@ -2,6 +2,7 @@ import { apiGetSync, apiPutSync } from './api-client'
 import { getSnapshot } from './license-store'
 import { exportSyncPayload, getSettings, mergeFromRemote, updateSettings } from './repo'
 import { getAccessToken } from './supabase'
+import { withMergeSuppressed } from './sync-guard'
 import type { SyncResult } from './sync-types'
 
 export type { SyncResult }
@@ -91,7 +92,7 @@ export async function syncNow(): Promise<SyncResult> {
   } else {
     // Merge remote library into local IndexedDB (F2)
     try {
-      await mergeFromRemote(pullRes.data.payload)
+      await withMergeSuppressed(() => mergeFromRemote(pullRes.data.payload))
     } catch (mergeErr) {
       console.warn('Sync merge exception:', mergeErr)
     }
@@ -174,11 +175,11 @@ export async function syncNow(): Promise<SyncResult> {
     const serverVersion = pushRes.version ?? baseVersion + 1
 
     if (serverPayload) {
-      await mergeFromRemote(serverPayload)
+      await withMergeSuppressed(() => mergeFromRemote(serverPayload))
     } else {
       const repull = await apiGetSync()
       if (repull.ok) {
-        await mergeFromRemote(repull.data.payload)
+        await withMergeSuppressed(() => mergeFromRemote(repull.data.payload))
       }
     }
 
